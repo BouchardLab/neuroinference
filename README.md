@@ -1,0 +1,1 @@
+Union of Intersections for Sparse and Predictive Modeling of Neuroscience Data
