@@ -102,8 +102,10 @@ def main(args):
         else:
             raise ValueError('Method not available.')
 
+        # run the fitting procedure using MPI
         fitter.fit(stimulus_train.T, response_train)
 
+        # root rank will extract fits and calculate scores
         if rank == 0:
             # store the fits
             strfs[frame] = fitter.coef_.T
@@ -128,8 +130,10 @@ def main(args):
             response_test = np.roll(response_test, -1)
             print('Frame ', frame, 'took ', time.time() - t, ' seconds.')
 
+        # broadcast the rolled response variable
         response_train = Bcast_from_root(response_train, comm)
 
+    # store all results in H5 file
     if rank == 0:
         results = h5py.File(args.results_path, 'a')
         cell_recording = 'cell%s_recording%s' % (args.cell, args.recording_idx)
