@@ -2,6 +2,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def idx_to_xy(idx, dx, dy):
+    """Converts an index to a set of xy coordinates in a grid with specified
+    width and height.
+
+    Parameters
+    ----------
+    idx : int
+        The index.
+
+    dx : int
+        The length of the grid.
+
+    dy : int
+        The width of the grid.
+
+    Returns
+    -------
+    x, y : int
+        The x and y coordinates.
+    """
+    x = idx % dx
+    y = dy - 1 - (idx // dx)
+    return x, y
+
+
 def calculate_selection_ratio(coefs):
     """Calculate the selection ratio, or fraction of non-zero parameters, for a
     set of coefficients.

@@ -4,7 +4,8 @@ from the Bouchard Lab. This dataset consists of micro-electrocorticography
 responses to tone pips.
 
 This script performs and stores tuning models on this dataset using a
-desired fitting procedure and tuning design structure.
+desired fitting procedure and tuning design structure. The default approach is
+to use Gaussian basis functions.
 """
 import argparse
 import h5py

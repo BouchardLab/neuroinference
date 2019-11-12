@@ -1,6 +1,6 @@
 """
 Performs a cross-validated coupling fit on various neuroscience datasets, using
-sci-kit learn or UoI.
+scikit-learn or Union of Intersections.
 
 This script calculates and stores coupling models on this dataset using a
 desired fitting procedure.
@@ -29,8 +29,7 @@ def main(args):
             bounds=(40, 60),
             band=args.band,
             electrodes=None,
-            transform=None
-        )
+            transform=None)
         class_labels = ecog.get_design_matrix(form='id')
 
     elif args.dataset == 'NHP':
@@ -41,8 +40,7 @@ def main(args):
         Y = nhp.get_response_matrix(
             bin_width=args.bin_width,
             region=args.region,
-            transform=args.transform
-        )
+            transform=args.transform)
         class_labels = None
 
     elif args.dataset == 'PVC11':
@@ -50,9 +48,7 @@ def main(args):
         pvc = PVC11(data_path=args.data_path)
 
         # get response matrix
-        Y = pvc.get_response_matrix(
-            transform=args.transform
-        )
+        Y = pvc.get_response_matrix(transform=args.transform)
         class_labels = pvc.get_design_matrix(form='label')
 
     else:
@@ -104,6 +100,7 @@ def main(args):
     # perform cross-validated coupling fits
     results = solver.estimation(**sem_args)
 
+    # store results of analysis
     results_file = h5py.File(args.results_path, 'a')
     group = results_file.create_group(args.results_group)
     group['Y'] = Y
