@@ -12,7 +12,7 @@ def plot_basal_ganglia_coefs(
     Parameters
     ----------
     baseline_coefs : np.ndarray
-        
+
     uoi_coefs : np.ndarray
 
     vmin : float

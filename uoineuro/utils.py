@@ -50,7 +50,7 @@ def calculate_selection_ratio(coefs):
 
 
 def plot_metric_summary(baseline_group, fits_groups, metrics, fax=None):
-    """Analyze a set of coupling fits in a grid of subplots, using a user-provided
+    """Analyze a set of model fits in a grid of subplots, using a user-provided
     set of metrics.
 
     Parameters
@@ -59,7 +59,7 @@ def plot_metric_summary(baseline_group, fits_groups, metrics, fax=None):
         The baseline algorithm to compare against.
 
     fits_groups : list of HDF5 objects
-        A list of the coupling fits to look at.
+        A list of the fits to look at.
 
     metrics : list of strings
         A list of the metrics to plot in the rows of the subplots.
@@ -113,5 +113,70 @@ def plot_metric_summary(baseline_group, fits_groups, metrics, fax=None):
                     alpha=0.5,
                     color='k',
                     edgecolor='w')
+
+    return fig, axes
+
+
+def plot_difference_distribution(baseline_group, fits_groups, metrics, fax=None):
+    """Assess the difference between two metrics for a baseline and a comparison
+    set of fits.
+
+    Parameters
+    ----------
+    baseline_group : HDF5 Object
+        The baseline algorithm to compare against.
+
+    fits_groups : list of HDF5 objects
+        A list of the fits to look at.
+
+    metrics : list of strings
+        A list of the metrics to plot the differences for.
+
+    fax : tuple of (fig, axes) matplotlib objects
+        If None, a (fig, axes) is created. Otherwise, fax are modified directly.
+
+    Returns
+    -------
+    fax : tuple of (fig, axes) matplotlib objects
+        The (fig, axes) on which the metrics were plotted.
+    """
+    n_algorithms = len(fits_groups)
+    n_metrics = len(metrics)
+
+    if fax is None:
+        fig, axes = plt.subplots(n_metrics, n_algorithms,
+                                 figsize=(4 * n_algorithms, 2.5 * n_metrics))
+    else:
+        fig, axes = fax
+
+    # iterate over metrics
+    for row_idx, metric in enumerate(metrics):
+        if metric == 'selection_ratio':
+            # extract the key containing the coefficient dataset
+            key = [key for key in baseline_group if 'coefs' in key][0]
+            baseline_coefs = baseline_group[key][:]
+            # calculate selection ratio for baseline
+            baseline_selection_ratio = \
+                calculate_selection_ratio(baseline_coefs).mean(axis=0)
+
+        # iterate over algorithms
+        for col_idx, algorithm in enumerate(fits_groups):
+            if metric == 'selection_ratio':
+                # calculate selection ratio for algorithm
+                coefs = algorithm[key][:]
+                selection_ratio = calculate_selection_ratio(coefs).mean(axis=0)
+
+                # plot direct comparison
+                axes[row_idx, col_idx].hist(
+                    selection_ratio - baseline_selection_ratio,
+                    alpha=0.9,
+                    color='gray')
+            else:
+                # plot some metric already stored in the H5 file
+                axes[row_idx, col_idx].hist(
+                    (baseline_group[metric][:].mean(axis=0)
+                     - algorithm[metric][:].mean(axis=0)),
+                    alpha=0.9,
+                    color='gray')
 
     return fig, axes
