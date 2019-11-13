@@ -61,7 +61,7 @@ def main(args):
     n_frames_per_window = comm.bcast(n_frames_per_window, root=0)
 
     # iterate over frames in STRF
-    for frame in range(10):
+    for frame in range(3):
         if rank == 0:
             print('Fitting Frame: ', str(frame))
             t = time.time()
@@ -157,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('--method')
     parser.add_argument('--cell', type=int)
     parser.add_argument('--recording_idx', type=int)
-    parser.add_argument('--window_length', type=float, default=0.5)
+    parser.add_argument('--window_length', type=float, default=0.4)
     parser.add_argument('--standardize', action='store_true')
     parser.add_argument('--n_boots_sel', type=int, default=30)
     parser.add_argument('--n_boots_est', type=int, default=30)
