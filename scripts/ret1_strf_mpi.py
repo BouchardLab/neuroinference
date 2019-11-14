@@ -35,7 +35,7 @@ def main(args):
         response = retina.get_responses_for_recording(
             recording_idx=args.recording_idx,
             window_length=args.window_length,
-            cells=args.cell)[:, args.cell]
+            cells=args.cell)[:, 0]
         n_frames_per_window = retina.get_n_frames_per_window(
             recording_idx=args.recording_idx,
             window_length=args.window_length)
@@ -49,8 +49,10 @@ def main(args):
         # create storage arrays
         strfs = np.zeros((n_frames_per_window, n_features))
         intercepts = np.zeros(n_frames_per_window)
-        r2_train = np.zeros(n_frames_per_window)
-        r2_test = np.zeros(n_frames_per_window)
+        if 'Lasso' in args.method:
+            r2_train = np.zeros(n_frames_per_window)
+            r2_test = np.zeros(n_frames_per_window)
+        lls = np.zeros(n_frames_per_window)
         aic = np.zeros(n_frames_per_window)
         bic = np.zeros(n_frames_per_window)
         print('Broadcasting data...')
@@ -61,13 +63,11 @@ def main(args):
     n_frames_per_window = comm.bcast(n_frames_per_window, root=0)
 
     # iterate over frames in STRF
-    for frame in range(3):
-        if rank == 0:
-            print('Fitting Frame: ', str(frame))
-            t = time.time()
-        else:
-            print('Frame ', frame, ', Rank ', rank)
+    for frame in range(n_frames_per_window):
+        if args.verbose and rank == 0:
+            print('Fitting Frame: ', str(frame)
 
+        # obtain fitting procedure
         if args.method == 'Lasso':
             fitter = LassoCV(
                 normalize=args.standardize,
@@ -117,18 +117,38 @@ def main(args):
             n_selected_features = 1 + np.count_nonzero(fitter.coef_)
             n_samples = y_test_pred.size
 
-            r2_train[frame] = r2_score(response_train, y_train_pred)
-            r2_test[frame] = r2_score(response_test, y_test_pred)
-            ll = log_likelihood_glm(model='normal',
-                                    y_true=response_train,
-                                    y_pred=y_train_pred)
+            # different scores needed for Lasso/Poisson
+            if 'Lasso' in args.method:
+                # coefficient of determination
+                r2_train[frame] = r2_score(response_train, y_train_pred)
+                r2_test[frame] = r2_score(response_test, y_test_pred)
+                # training likelihood for ICs
+                ll_train = log_likelihood_glm(model='normal',
+                                              y_true=response_train,
+                                              y_pred=y_train_pred)
+                # test likelihood
+                lls[frame] = log_likelihood_glm(model='normal',
+                                                y_true=response_train,
+                                                y_pred=y_test_pred)
+            else:
+                # training likelihood for ICs
+                ll_train = log_likelihood_glm(model='poisson',
+                                              y_true=response_train,
+                                              y_pred=y_train_pred)
+                # test likelihood
+                lls[frame] = log_likelihood_glm(model='poisson',
+                                                y_true=response_train,
+                                                y_pred=y_test_pred)
+            # calculate information criteria
             aic[frame] = AIC(ll, n_selected_features)
             bic[frame] = BIC(ll, n_selected_features, n_samples)
+
+            if args.verbose:
+                print('Frame ', frame, 'took ', time.time() - t, ' seconds.')
 
             # roll back test set window
             response_train = np.roll(response_train, -1)
             response_test = np.roll(response_test, -1)
-            print('Frame ', frame, 'took ', time.time() - t, ' seconds.')
 
         # broadcast the rolled response variable
         response_train = Bcast_from_root(response_train, comm)
@@ -167,6 +187,7 @@ if __name__ == '__main__':
     parser.add_argument('--stability_selection', type=float, default=1.0)
     parser.add_argument('--estimation_score', default='r2')
     parser.add_argument('--test_frac', type=float, default=0.1)
+    parser.add_argument('--verbose', action='store_true')
 
     args = parser.parse_args()
 
