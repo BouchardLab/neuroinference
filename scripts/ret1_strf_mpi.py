@@ -65,7 +65,8 @@ def main(args):
     # iterate over frames in STRF
     for frame in range(n_frames_per_window):
         if args.verbose and rank == 0:
-            print('Fitting Frame: ', str(frame)
+            print('Fitting Frame: ', str(frame))
+            t = time.time()
 
         # obtain fitting procedure
         if args.method == 'Lasso':
@@ -140,8 +141,8 @@ def main(args):
                                                 y_true=response_train,
                                                 y_pred=y_test_pred)
             # calculate information criteria
-            aic[frame] = AIC(ll, n_selected_features)
-            bic[frame] = BIC(ll, n_selected_features, n_samples)
+            aic[frame] = AIC(ll_train, n_selected_features)
+            bic[frame] = BIC(ll_train, n_selected_features, n_samples)
 
             if args.verbose:
                 print('Frame ', frame, 'took ', time.time() - t, ' seconds.')
