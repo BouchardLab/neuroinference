@@ -129,7 +129,7 @@ def main(args):
                                               y_pred=y_train_pred)
                 # test likelihood
                 lls[frame] = log_likelihood_glm(model='normal',
-                                                y_true=response_train,
+                                                y_true=response_test,
                                                 y_pred=y_test_pred)
             else:
                 # training likelihood for ICs
@@ -138,7 +138,7 @@ def main(args):
                                               y_pred=y_train_pred)
                 # test likelihood
                 lls[frame] = log_likelihood_glm(model='poisson',
-                                                y_true=response_train,
+                                                y_true=response_test,
                                                 y_pred=y_test_pred)
             # calculate information criteria
             aic[frame] = AIC(ll_train, n_selected_features)
