@@ -15,6 +15,11 @@ from sklearn.metrics import r2_score
 
 
 def main(args):
+    if args.random_state == -1:
+        random_state = None
+    else:
+        random_state = args.random_state
+
     comm = MPI.COMM_WORLD
     rank = comm.rank
 
@@ -24,7 +29,8 @@ def main(args):
 
     # root will gather the data and initialize storage arrays
     if rank == 0:
-        print('Getting data...')
+        if args.verbose:
+            print('Getting data...')
         # gather data if we're in the central rank
         retina = Retina(data_path=args.data_path,
                         random_path=args.random_path)
@@ -55,7 +61,8 @@ def main(args):
         lls = np.zeros(n_frames_per_window)
         aic = np.zeros(n_frames_per_window)
         bic = np.zeros(n_frames_per_window)
-        print('Broadcasting data...')
+        if args.verbose:
+            print('Broadcasting data...')
 
     # broadcast to other ranks
     stimulus_train = Bcast_from_root(stimulus_train, comm)
@@ -86,7 +93,8 @@ def main(args):
                 n_lambdas=args.n_lambdas,
                 stability_selection=args.stability_selection,
                 estimation_score=args.estimation_score,
-                comm=comm)
+                comm=comm,
+                random_state=random_state)
 
         elif args.method == 'UoI_Poisson':
             fitter = UoI_Poisson(
@@ -98,7 +106,8 @@ def main(args):
                 n_lambdas=args.n_lambdas,
                 stability_selection=args.stability_selection,
                 estimation_score=args.estimation_score,
-                comm=comm)
+                comm=comm,
+                random_state=random_state)
 
         else:
             raise ValueError('Method not available.')
@@ -159,7 +168,7 @@ def main(args):
         results = h5py.File(args.results_path, 'a')
         cell_recording = 'cell%s_recording%s' % (args.cell, args.recording_idx)
         group = results.create_group(cell_recording + '/' + args.results_group)
-        group['strf'] = strfs
+        group['strfs'] = strfs
         group['intercepts'] = intercepts
         group['r2_train'] = r2_train
         group['r2_test'] = r2_test
@@ -188,6 +197,7 @@ if __name__ == '__main__':
     parser.add_argument('--stability_selection', type=float, default=1.0)
     parser.add_argument('--estimation_score', default='r2')
     parser.add_argument('--test_frac', type=float, default=0.1)
+    parser.add_argument('--random_state', type=int, default=-1)
     parser.add_argument('--verbose', action='store_true')
 
     args = parser.parse_args()
