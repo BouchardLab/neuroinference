@@ -116,7 +116,7 @@ def main(args):
             y_train_pred = fitter.intercept_ + np.dot(stimulus_train.T, fitter.coef_)
             y_test_pred = fitter.intercept_ + np.dot(stimulus_test.T, fitter.coef_)
             n_selected_features = 1 + np.count_nonzero(fitter.coef_)
-            n_samples = y_test_pred.size
+            n_samples = y_train_pred.size
 
             # different scores needed for Lasso/Poisson
             if 'Lasso' in args.method:
