@@ -213,7 +213,7 @@ def main(args):
     group['lls_test'] = lls_test
     group['aics'] = aics
     group['bics'] = bics
-    if 'Lasso' in args.method:
+    if 'lasso' in args.method:
         group['r2s_train'] = r2s_train
         group['r2s_test'] = r2s_test
     else:
