@@ -12,6 +12,7 @@ from pyuoi.mpi_utils import Bcast_from_root
 from pyuoi.utils import log_likelihood_glm, AIC, BIC
 from sklearn.linear_model import LassoCV
 from sklearn.metrics import r2_score
+from uoineuro.utils import deviance_poisson
 
 
 def main(args):
@@ -56,11 +57,15 @@ def main(args):
         strfs = np.zeros((n_frames_per_window, n_features))
         intercepts = np.zeros(n_frames_per_window)
         if 'Lasso' in args.method:
-            r2_train = np.zeros(n_frames_per_window)
-            r2_test = np.zeros(n_frames_per_window)
-        lls = np.zeros(n_frames_per_window)
-        aic = np.zeros(n_frames_per_window)
-        bic = np.zeros(n_frames_per_window)
+            r2s_train = np.zeros(n_frames_per_window)
+            r2s_test = np.zeros(n_frames_per_window)
+        else:
+            deviances_train = np.zeros(n_frames_per_window)
+            deviances_test = np.zeros(n_frames_per_window)
+        lls_train = np.zeros(n_frames_per_window)
+        lls_test = np.zeros(n_frames_per_window)
+        aics = np.zeros(n_frames_per_window)
+        bics = np.zeros(n_frames_per_window)
         if args.verbose:
             print('Broadcasting data...')
 
@@ -130,28 +135,25 @@ def main(args):
             # different scores needed for Lasso/Poisson
             if 'Lasso' in args.method:
                 # coefficient of determination
-                r2_train[frame] = r2_score(response_train, y_train_pred)
-                r2_test[frame] = r2_score(response_test, y_test_pred)
-                # training likelihood for ICs
-                ll_train = log_likelihood_glm(model='normal',
-                                              y_true=response_train,
-                                              y_pred=y_train_pred)
-                # test likelihood
-                lls[frame] = log_likelihood_glm(model='normal',
-                                                y_true=response_test,
-                                                y_pred=y_test_pred)
+                r2s_train[frame] = r2_score(response_train, y_train_pred)
+                r2s_test[frame] = r2_score(response_test, y_test_pred)
+                model = 'normal'
             else:
-                # training likelihood for ICs
-                ll_train = log_likelihood_glm(model='poisson',
-                                              y_true=response_train,
-                                              y_pred=y_train_pred)
-                # test likelihood
-                lls[frame] = log_likelihood_glm(model='poisson',
-                                                y_true=response_test,
-                                                y_pred=y_test_pred)
+                deviances_train[frame] = deviance_poisson(response_train,
+                                                          y_train_pred)
+                deviances_test[frame] = deviance_poisson(response_test,
+                                                         y_test_pred)
+
+            # likelihoods
+            lls_train[frame] = log_likelihood_glm(model=model,
+                                                  y_true=response_train,
+                                                  y_pred=y_train_pred)
+            lls_test[frame] = log_likelihood_glm(model=model,
+                                                 y_true=response_test,
+                                                 y_pred=y_test_pred)
             # calculate information criteria
-            aic[frame] = AIC(ll_train, n_selected_features)
-            bic[frame] = BIC(ll_train, n_selected_features, n_samples)
+            aics[frame] = AIC(lls_train[frame], n_selected_features)
+            bics[frame] = BIC(lls_train[frame], n_selected_features, n_samples)
 
             if args.verbose:
                 print('Frame ', frame, 'took ', time.time() - t, ' seconds.')
@@ -170,11 +172,16 @@ def main(args):
         group = results.create_group(cell_recording + '/' + args.results_group)
         group['strfs'] = strfs
         group['intercepts'] = intercepts
-        group['r2_train'] = r2_train
-        group['r2_test'] = r2_test
-        group['aic'] = aic
-        group['bic'] = bic
-        results.close()
+        group['lls_train'] = lls_train
+        group['lls_test'] = lls_test
+        group['aics'] = aics
+        group['bics'] = bics
+        if 'Lasso' in args.method:
+            group['r2s_train'] = r2s_train
+            group['r2s_test'] = r2s_test
+        else:
+            group['deviances_train'] = deviances_train
+            group['deviances_test'] = deviances_test
 
 
 if __name__ == '__main__':

@@ -27,6 +27,32 @@ def idx_to_xy(idx, dx, dy):
     return x, y
 
 
+def deviance_poisson(y_true, y_pred):
+    """Calculates the deviance for a Poisson model.
+
+    Parameters
+    ----------
+    y_true : ndarray
+        The true response values.
+
+    y_pred : ndarray
+        The predicted response values, according to the Poisson model.
+
+    Returns
+    -------
+    dev : float
+        The total deviance of the data.
+    """
+    # calculate log-likelihood of the predicted values
+    ll_pred = np.sum(y_true * np.log(y_pred) - y_pred)
+    # calculate log-likelihood of the true data
+    y_true_nz = y_true[y_true != 0]
+    ll_true = np.sum(y_true_nz * np.log(y_true_nz) - y_true_nz)
+    # calculate deviance
+    deviance = ll_true - ll_pred
+    return deviance
+
+
 def calculate_selection_ratio(coefs):
     """Calculate the selection ratio, or fraction of non-zero parameters, for a
     set of coefficients.
