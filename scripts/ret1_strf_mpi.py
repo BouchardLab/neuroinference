@@ -56,7 +56,7 @@ def main(args):
         # create storage arrays
         strfs = np.zeros((n_frames_per_window, n_features))
         intercepts = np.zeros(n_frames_per_window)
-        if 'Lasso' in args.method:
+        if 'lasso' in args.method:
             r2s_train = np.zeros(n_frames_per_window)
             r2s_test = np.zeros(n_frames_per_window)
         else:
@@ -81,14 +81,14 @@ def main(args):
             t = time.time()
 
         # obtain fitting procedure
-        if args.method == 'Lasso':
+        if args.method == 'lasso':
             fitter = LassoCV(
                 normalize=args.standardize,
                 fit_intercept=True,
                 cv=5,
                 max_iter=10000)
 
-        elif args.method == 'UoI_Lasso':
+        elif args.method == 'uoi_lasso':
             fitter = UoI_Lasso(
                 standardize=args.standardize,
                 n_boots_sel=args.n_boots_sel,
@@ -101,7 +101,7 @@ def main(args):
                 comm=comm,
                 random_state=random_state)
 
-        elif args.method == 'UoI_Poisson':
+        elif args.method == 'uoi_poisson':
             fitter = UoI_Poisson(
                 standardize=args.standardize,
                 n_boots_sel=args.n_boots_sel,
@@ -133,7 +133,7 @@ def main(args):
             n_samples = y_train_pred.size
 
             # different scores needed for Lasso/Poisson
-            if 'Lasso' in args.method:
+            if 'lasso' in args.method:
                 # coefficient of determination
                 r2s_train[frame] = r2_score(response_train, y_train_pred)
                 r2s_test[frame] = r2_score(response_test, y_test_pred)
@@ -176,7 +176,7 @@ def main(args):
         group['lls_test'] = lls_test
         group['aics'] = aics
         group['bics'] = bics
-        if 'Lasso' in args.method:
+        if 'lasso' in args.method:
             group['r2s_train'] = r2s_train
             group['r2s_test'] = r2s_test
         else:

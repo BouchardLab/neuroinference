@@ -169,7 +169,7 @@ def main(args):
             coupling_coefs[fold_idx, target_idx] = np.copy(coef)
 
             # train and test predicted responses
-            if 'Lasso' in args.method:
+            if 'lasso' in args.method:
                 y_pred_train = intercept + np.dot(X_train, coef)
                 y_pred_test = intercept + np.dot(X_test, coef)
                 model = 'normal'
@@ -193,7 +193,7 @@ def main(args):
             bics[fold_idx, target_idx] = BIC(ll_train, n_features, n_train_samples)
 
             # different scores needed for Lasso/Poisson
-            if 'Lasso' in args.method:
+            if 'lasso' in args.method:
                 # coefficient of determination
                 r2s_train[fold_idx, target_idx] = r2_score(y_true_train, y_pred_train)
                 r2s_test[fold_idx, target_idx] = r2_score(y_true_test, y_pred_test)
