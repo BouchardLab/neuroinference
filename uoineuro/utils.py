@@ -75,7 +75,9 @@ def calculate_selection_ratio(coefs):
     return selection_ratio
 
 
-def plot_metric_summary(baseline_group, fits_groups, metrics, fax=None):
+def plot_metric_summary(
+    baseline_group, fits_groups, metrics, fax=None, omit_idxs=None
+):
     """Analyze a set of model fits in a grid of subplots, using a user-provided
     set of metrics.
 
@@ -117,6 +119,9 @@ def plot_metric_summary(baseline_group, fits_groups, metrics, fax=None):
             baseline_selection_ratio = \
                 calculate_selection_ratio(baseline_coefs).mean(axis=0)
 
+        n_total_units = baseline_selection_ratio.size
+        selected_idxs = np.setdiff1d(np.arange(n_total_units), omit_idxs)
+
         # iterate over algorithms
         for col_idx, algorithm in enumerate(fits_groups):
             if metric == 'selection_ratio':
@@ -126,16 +131,16 @@ def plot_metric_summary(baseline_group, fits_groups, metrics, fax=None):
 
                 # plot direct comparison
                 axes[row_idx, col_idx].scatter(
-                    baseline_selection_ratio,
-                    selection_ratio,
+                    baseline_selection_ratio[selected_idxs],
+                    selection_ratio[selected_idxs],
                     alpha=0.5,
                     color='k',
                     edgecolor='w')
             else:
                 # plot some metric already stored in the H5 file
                 axes[row_idx, col_idx].scatter(
-                    baseline_group[metric][:].mean(axis=0),
-                    algorithm[metric][:].mean(axis=0),
+                    baseline_group[metric][:].mean(axis=0)[selected_idxs],
+                    algorithm[metric][:].mean(axis=0)[selected_idxs],
                     alpha=0.5,
                     color='k',
                     edgecolor='w')
