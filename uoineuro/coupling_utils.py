@@ -66,10 +66,6 @@ def create_symmetrized_graph(coupling_coefs, omit_idxs=None, transform=None):
     weights_dict = {}
     n_units = weight_matrix.shape[0]
 
-    if omit_idxs is not None:
-        weight_matrix[omit_idxs] = 0
-        weight_matrix[:, omit_idxs] = 0
-
     G = nx.Graph()
 
     for unit in range(n_units):
@@ -77,6 +73,10 @@ def create_symmetrized_graph(coupling_coefs, omit_idxs=None, transform=None):
 
     for unit_pair in itertools.combinations(np.arange(n_units), 2):
         u1, u2 = unit_pair
+
+        if (u1 in omit_idxs) or (u2 in omit_idxs):
+            continue
+
         weight = 0.5 * (weight_matrix[u1, u2] + weight_matrix[u2, u1])
         if transform == 'square_root':
             weight = np.sign(weight) * np.sqrt(np.abs(weight))
