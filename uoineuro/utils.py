@@ -1,5 +1,27 @@
+import h5py
 import numpy as np
 import matplotlib.pyplot as plt
+
+
+def copy_group(send_file, send_group, rec_file, rec_group):
+    send = h5py.File(send_file, 'r')
+    to_send = send[send_group]
+    rec = h5py.File(rec_file, 'a')
+    to_rec = rec.create_group(rec_group)
+
+    for key, val in to_send.items():
+        if isinstance(val, h5py.Dataset):
+            if key != 'Y':
+                to_rec[key.lower()] = val[:]
+            else:
+                to_rec[key] = val[:]
+        else:
+            group2 = to_rec.create_group(key)
+            for key2, val2 in val.items():
+                group2[key2] = val2[:]
+
+    send.close()
+    rec.close()
 
 
 def idx_to_xy(idx, dx, dy):

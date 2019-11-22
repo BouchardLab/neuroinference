@@ -184,8 +184,8 @@ def main(args):
             ll_test = log_likelihood_glm(model=model,
                                          y_true=y_true_test,
                                          y_pred=y_pred_test)
-            lls_train[fold_idx, target_idx] = ll_train
-            lls_test[fold_idx, target_idx] = ll_test
+            lls_train[fold_idx, target_idx] = y_pred_train.size * ll_train
+            lls_test[fold_idx, target_idx] = y_pred_test.size * ll_test
 
             n_features = 1 + np.count_nonzero(coef)
             n_train_samples = y_true_train.size

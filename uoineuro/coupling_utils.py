@@ -7,7 +7,25 @@ from sklearn.metrics import r2_score
 
 
 def check_metrics(group, fold_idx, unit_idx, metrics, poisson=False):
-    """Check that the metrics are correctly calculated."""
+    """Check that the metrics are correctly calculated.
+
+    Parameters
+    ----------
+    group : h5py group
+        The group in which to check metrics.
+
+    fold_idx : int
+        The fold to check.
+
+    unit_idx : int
+        The unit to check.
+
+    metrics : list of strings
+        The metrics to check.
+
+    poisson : bool
+        If True, the fits were generated using a Poisson fitter.
+    """
 
     # gather datasets
     Y = group['Y']
@@ -52,6 +70,18 @@ def check_metrics(group, fold_idx, unit_idx, metrics, poisson=False):
 
 
 def coupling_coefs_to_weight_matrix(coupling_coefs):
+    """Converts a set of coupling coefficients to a weight matrix.
+
+    Parameters
+    ----------
+    coupling_coefs : np.array
+        The set of coupling coefficients.
+
+    Returns
+    -------
+    weight_matrix : np.array
+        A weight matrix, with self connections inputted.
+    """
     n_units = coupling_coefs.shape[0]
     weight_matrix = np.zeros((n_units, n_units))
 
@@ -62,6 +92,27 @@ def coupling_coefs_to_weight_matrix(coupling_coefs):
 
 
 def create_symmetrized_graph(coupling_coefs, omit_idxs=None, transform=None):
+    """Converts a set of coupling coefficients to a symmetrized NetworkX graph.
+
+    Parameters
+    ----------
+    coupling_coefs : np.array
+        The set of coupling coefficients.
+
+    omit_idxs : array-like
+        The indices to omit from the graph.
+
+    transform : string or None
+        The transformation to apply to the weights.
+
+    Returns
+    -------
+    G : NetworkX graph
+        An undirected graph corresponding to coupling coefs.
+
+    weights_dict : dict
+        A dictionary containing all the weights for each pair of units.
+    """
     weight_matrix = coupling_coefs_to_weight_matrix(coupling_coefs)
     weights_dict = {}
     n_units = weight_matrix.shape[0]
