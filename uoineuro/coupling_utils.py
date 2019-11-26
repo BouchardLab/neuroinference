@@ -3,6 +3,7 @@ import networkx as nx
 import numpy as np
 
 from pyuoi.utils import log_likelihood_glm, AIC, BIC
+from .utils import deviance_poisson
 from sklearn.metrics import r2_score
 
 
@@ -53,17 +54,21 @@ def check_metrics(group, fold_idx, unit_idx, metrics, poisson=False):
 
         if metric == 'r2s_train' or metric == 'r2s_test':
             true = r2_score(y_true, y_pred)
-            assert true == est
         elif metric == 'lls_train' or metric == 'lls_test':
             true = log_likelihood_glm(model=model, y_true=y_true, y_pred=y_pred)
+            true *= y_true.size
         elif metric == 'aics':
             ll = log_likelihood_glm(model=model, y_true=y_true, y_pred=y_pred)
+            ll *= y_true.size
             n_features = 1 + np.count_nonzero(coupling_coef)
             true = AIC(ll, n_features)
         elif metric == 'bics':
             ll = log_likelihood_glm(model=model, y_true=y_true, y_pred=y_pred)
+            ll *= y_true.size
             n_features = 1 + np.count_nonzero(coupling_coef)
             true = BIC(ll, n_features, sample_idx.size)
+        elif metric == 'deviances_train' or metric == 'deviances_test':
+            true = deviance_poisson(y_true, y_pred)
 
         assert true == est
     return True
@@ -125,7 +130,7 @@ def create_symmetrized_graph(coupling_coefs, omit_idxs=None, transform=None):
     for unit_pair in itertools.combinations(np.arange(n_units), 2):
         u1, u2 = unit_pair
 
-        if (u1 in omit_idxs) or (u2 in omit_idxs):
+        if (omit_idxs is not None) and ((u1 in omit_idxs) or (u2 in omit_idxs)):
             continue
 
         weight = 0.5 * (weight_matrix[u1, u2] + weight_matrix[u2, u1])
