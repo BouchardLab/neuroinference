@@ -1,3 +1,7 @@
+# graph files
+*.gexf
+*.graphml
+
 ### Other files ###
 *.pdf
 

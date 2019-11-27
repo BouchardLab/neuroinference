@@ -1,10 +1,56 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 from pykalman import KalmanFilter
 from scipy.optimize import nnls
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import r2_score
+from sklearn.metrics import r2_score
 from sklearn.utils import check_random_state
+
+
+def plot_ecog_bases(components, ecog, vmax=None, fax=None, n_cols=3):
+    n_components, n_electrodes = components.shape
+
+    # set up figure axes
+    if fax is None:
+        n_rows = int(np.ceil(n_components / n_cols))
+        fig, axes = plt.subplots(n_rows, n_cols,
+                                 figsize=(n_cols * 5, n_rows * 3))
+    else:
+        fig, axes = fax
+
+    ordering = np.zeros(n_components, dtype='int')
+    for idx in range(1, n_components):
+        base = components[ordering[idx - 1]]
+        available = np.setdiff1d(np.arange(n_components),
+                                 ordering[:idx])
+        scores = np.zeros(available.size)
+        for avail_idx, avail in enumerate(available):
+            scores[avail_idx] = np.dot(base, components[avail])
+        ordering[idx] = available[np.argmax(scores)]
+
+    components = components[ordering, :]
+    for component_idx, component in enumerate(components):
+        # extract current axis
+        ax = axes.ravel()[component_idx]
+
+        # reshape bases into electrode grid
+        grid = np.zeros((8, 16))
+        for electrode_idx in range(n_electrodes):
+            x, y = ecog.get_xy_for_electrode(electrode_idx)
+            grid[x, y] = component[electrode_idx]
+
+        if vmax is None:
+            vmax = np.max(components)
+
+        ax.imshow(np.flip(grid, axis=0), cmap=plt.get_cmap('Greys'),
+                  vmin=0, vmax=vmax)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+
+    return fig, axes
 
 
 def stratify_sample(stratify, frac, random_state=None):
@@ -47,7 +93,7 @@ def stratify_sample(stratify, frac, random_state=None):
 
 def bi_cross_validator(
     X, nmf, ranks, row_frac=0.75, col_frac=0.75, n_reps=10, stratify=None,
-    random_state=None
+    random_state=None, verbose=False
 ):
     """Performs Bi-Cross-Validation to choose an optimal rank for a
     non-negative matrix factorization.
@@ -87,7 +133,7 @@ def bi_cross_validator(
     errors : np.ndarray, shape (n_ranks,)
         An array containing the validation errors for each rank.
     """
-    rng = check_random_state(random_state)
+    random_state = check_random_state(random_state)
 
     n_samples, n_features = X.shape
     errors = np.zeros(ranks.size)
@@ -98,14 +144,18 @@ def bi_cross_validator(
 
     # iterate over repetitions of calculating validation loss
     for rep in range(n_reps):
+        if verbose:
+            print('Rep: ', rep)
         # iterate over the ranks
         for idx, k in enumerate(ranks):
+            if verbose:
+                print('  Rank: ', k)
             # choose rows according to stratification
-            rows = stratify_sample(stratify, row_frac, rng=random_state)
+            rows = stratify_sample(stratify, row_frac, random_state=random_state)
             # choose columns randomly
-            cols = np.sort(rng.choice(n_features,
-                                      size=int(col_frac * n_features),
-                                      replace=False))
+            cols = np.sort(random_state.choice(n_features,
+                                               size=int(col_frac * n_features),
+                                               replace=False))
 
             # decompose bottom right quadrant
             X_negI_negJ = np.delete(np.delete(X, rows, axis=0), cols, axis=1)
