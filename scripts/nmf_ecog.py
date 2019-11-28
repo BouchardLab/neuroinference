@@ -42,7 +42,7 @@ def main(args):
                                            stratify=stratify,
                                            random_state=random_state,
                                            verbose=args.verbose)
-        results = h5py.File(args.results_path, 'r')
+        results = h5py.File(args.results_path, 'a')
         group = results.create_group(args.results_group)
         group['errors'] = errors
         results.close()
@@ -54,7 +54,7 @@ def main(args):
                       nmf_beta_loss='frobenius',
                       nmf_max_iter=1000)
         uoi.fit(Y)
-        results = h5py.File(args.results_path, 'r')
+        results = h5py.File(args.results_path, 'a')
         group = results.create_group(args.results_group)
         group['components_'] = uoi.components_
         group['dissimilarity'] = uoi.dissimilarity_
