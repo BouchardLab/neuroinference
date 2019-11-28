@@ -75,7 +75,7 @@ if __name__ == '__main__':
     parser.add_argument('--col_frac', type=float, default=0.75)
     parser.add_argument('--reps', type=int, default=10)
     parser.add_argument('--random_state', type=int, default=-1)
-    parser.add_argument('--verbose', store_action=True)
+    parser.add_argument('--verbose', action='store_true')
     # nmf arguments
     parser.add_argument('--solver', default='cd')
     parser.add_argument('--alpha', type=float, default=0.)
