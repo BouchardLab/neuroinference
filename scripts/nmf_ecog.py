@@ -71,6 +71,7 @@ if __name__ == '__main__':
     parser.add_argument('--results_group')
     parser.add_argument('--method')
     # bi-cross-validation arguments
+    parser.add_argument('--max_rank', type=int, default=100)
     parser.add_argument('--row_frac', type=float, default=0.75)
     parser.add_argument('--col_frac', type=float, default=0.75)
     parser.add_argument('--reps', type=int, default=10)
