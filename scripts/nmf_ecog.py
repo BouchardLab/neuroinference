@@ -26,7 +26,7 @@ def main(args):
     Y[:, dead_indices] = 0
     Y = Y + np.abs(np.min(Y, axis=0, keepdims=True))
 
-    if args.method == 'NMF':
+    if args.method == 'nmf':
         nmf = NMF(init='random',
                   solver=args.solver,
                   beta_loss='frobenius',
