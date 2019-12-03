@@ -9,9 +9,74 @@ from sklearn.metrics import r2_score
 from sklearn.utils import check_random_state
 
 
+def match_bases(components1, components2):
+    """Matches similar bases between two basis sets.
+
+    Parameters
+    ----------
+    components1, components2 : np.ndarray
+        The basis sets.
+
+    Returns
+    -------
+    max_ordering1, max_ordering2 : np.ndarray
+        The indices for each basis set that properly order the most similar
+        pairs of bases.
+    """
+    n_components, n_units = components1.shape
+    max_ordering1 = np.zeros(n_components)
+    max_ordering2 = np.zeros(n_components)
+
+    # calculate overlap using dot products
+    overlaps = np.dot(components1, components2.T)
+
+    # iterate over components
+    for component in range(n_components):
+        # determine the pair of components with the maximum overlap
+        max_idx = np.unravel_index(np.argmax(overlaps), overlaps.shape)
+        max_ordering1[component] = int(max_idx[0])
+        max_ordering2[component] = int(max_idx[1])
+        # toss out components so we don't select them in the future
+        overlaps[max_idx[0], :] = -1
+        overlaps[:, max_idx[1]] = -1
+
+    return max_ordering1, max_ordering2
+
+
 def plot_ecog_bases(
-    components, ecog, cmap='Greys', pref_freqs=None, fax=None, n_cols=3
+    components, ecog, ordering=None, cmap='Greys', pref_freqs=None, fax=None, n_cols=3
 ):
+    """Plots NMF bases obtained from the electrocorticography dataset.
+
+    Parameters
+    ----------
+    components : np.ndarray, shape (n_components, n_electrodes)
+        The numpy array containing the NMF bases.
+
+    ecog : neuropack object
+        The neuropack object containing the ECOG dataset.
+
+    ordering : array-like, default None
+        The ordering of components to present. If None, and ordering will be
+        chosen by maximizing similarity between consecutive bases.
+
+    cmap : string
+        The colormap to use.
+
+    pref_freqs : np.ndarray, shape (n_electrodes,)
+        The preferred frequency for each electrode.
+
+    fax : (fig, axes)
+        The figure and axes to plot the bases on.
+
+    n_cols : int
+        The number of columns to include in the figure.
+
+    Returns
+    -------
+    fig, axes : matplotlib object
+        The plotted figure and axes.
+    """
     n_components, n_electrodes = components.shape
 
     # set up figure axes
@@ -23,15 +88,16 @@ def plot_ecog_bases(
         fig, axes = fax
 
     # choose ordering of bases
-    ordering = np.zeros(n_components, dtype='int')
-    for idx in range(1, n_components):
-        base = components[ordering[idx - 1]]
-        available = np.setdiff1d(np.arange(n_components),
-                                 ordering[:idx])
-        scores = np.zeros(available.size)
-        for avail_idx, avail in enumerate(available):
-            scores[avail_idx] = np.dot(base, components[avail])
-        ordering[idx] = available[np.argmax(scores)]
+    if ordering is None:
+        ordering = np.zeros(n_components, dtype='int')
+        for idx in range(1, n_components):
+            base = components[ordering[idx - 1]]
+            available = np.setdiff1d(np.arange(n_components),
+                                     ordering[:idx])
+            scores = np.zeros(available.size)
+            for avail_idx, avail in enumerate(available):
+                scores[avail_idx] = np.dot(base, components[avail])
+            ordering[idx] = available[np.argmax(scores)]
     # re-order components
     components = components[ordering, :]
 
