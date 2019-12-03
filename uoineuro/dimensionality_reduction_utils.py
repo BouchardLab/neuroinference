@@ -1,3 +1,4 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -8,7 +9,9 @@ from sklearn.metrics import r2_score
 from sklearn.utils import check_random_state
 
 
-def plot_ecog_bases(components, ecog, vmax=None, fax=None, n_cols=3):
+def plot_ecog_bases(
+    components, ecog, cmap='Greys', pref_freqs=None, fax=None, n_cols=3
+):
     n_components, n_electrodes = components.shape
 
     # set up figure axes
@@ -19,6 +22,7 @@ def plot_ecog_bases(components, ecog, vmax=None, fax=None, n_cols=3):
     else:
         fig, axes = fax
 
+    # choose ordering of bases
     ordering = np.zeros(n_components, dtype='int')
     for idx in range(1, n_components):
         base = components[ordering[idx - 1]]
@@ -28,8 +32,10 @@ def plot_ecog_bases(components, ecog, vmax=None, fax=None, n_cols=3):
         for avail_idx, avail in enumerate(available):
             scores[avail_idx] = np.dot(base, components[avail])
         ordering[idx] = available[np.argmax(scores)]
-
+    # re-order components
     components = components[ordering, :]
+
+    # iterate over components/axes
     for component_idx, component in enumerate(components):
         # extract current axis
         ax = axes.ravel()[component_idx]
@@ -40,11 +46,16 @@ def plot_ecog_bases(components, ecog, vmax=None, fax=None, n_cols=3):
             x, y = ecog.get_xy_for_electrode(electrode_idx)
             grid[x, y] = component[electrode_idx]
 
-        if vmax is None:
-            vmax = np.max(components)
+        # normalize bases to obtain alphas
+        alphas = grid / np.max(grid)
+        # colormapped bases
+        lognorm = matplotlib.colors.LogNorm(vmin=ecog.freq_set[0],
+                                            vmax=ecog.freq_set[-1])
+        colormapped_bases = plt.get_cmap(cmap)(lognorm(pref_freqs))
+        colormapped_bases[..., -1] = alphas
 
-        ax.imshow(np.flip(grid, axis=0), cmap=plt.get_cmap('Greys'),
-                  vmin=0, vmax=vmax)
+        ax.imshow(colormapped_bases, origin='upper')
+
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_xticklabels([])
