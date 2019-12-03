@@ -53,6 +53,7 @@ def main(args):
                       nmf_solver=args.solver,
                       nmf_beta_loss='frobenius',
                       nmf_max_iter=1000)
+        uoi.nmf.set_params(alpha=args.alpha, l1_ratio=args.l1_ratio)
         uoi.fit(Y)
         results = h5py.File(args.results_path, 'a')
         group = results.create_group(args.results_group)
