@@ -1,6 +1,7 @@
 import argparse
 import h5py
 import numpy as np
+import time
 
 from neuropacks import ECOG
 from pyuoi.decomposition import UoI_NMF
@@ -47,6 +48,8 @@ def main(args):
         group['errors'] = errors
         results.close()
     else:
+        if args.verbose:
+            t = time.time()
         uoi = UoI_NMF(n_boots=args.n_boots,
                       ranks=np.arange(2, args.max_rank + 1),
                       nmf_init='random',
@@ -62,6 +65,8 @@ def main(args):
         group['bases_samples'] = uoi.bases_samples_
         group['bases_labels'] = uoi.bases_samples_labels_
         results.close()
+        if args.verbose:
+            print('Time: ', time.time() - t)
 
 
 if __name__ == '__main__':
@@ -82,6 +87,8 @@ if __name__ == '__main__':
     parser.add_argument('--solver', default='cd')
     parser.add_argument('--alpha', type=float, default=0.)
     parser.add_argument('--l1_ratio', type=float, default=0.)
+    # uoi arguments
+    parser.add_argument('--n_boots', type=int, default=10)
 
     args = parser.parse_args()
     main(args)
