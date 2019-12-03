@@ -155,11 +155,15 @@ def main(args):
                 from cvglmnet import cvglmnet
                 from cvglmnetCoef import cvglmnetCoef
 
-                fit = cvglmnet(x=X_train, y=y_true_train, family='poisson',
-                               nfolds=n_folds, standardize=standardize)
-                coefs = cvglmnetCoef(fit, s='lambda_min').ravel()
-                intercept = coefs[0]
-                coef = coefs[1:]
+                try:
+                    fit = cvglmnet(x=X_train, y=y_true_train, family='poisson',
+                                   nfolds=n_folds, standardize=standardize)
+                    coefs = cvglmnetCoef(fit, s='lambda_min').ravel()
+                    intercept = coefs[0]
+                    coef = coefs[1:]
+                except ValueError:
+                    intercept = np.log(np.mean(y_true_train))
+                    coef = np.zeros(X_train.shape[1])
             else:
                 fitter.fit(X_train, y_true_train)
                 intercept = fitter.intercept_

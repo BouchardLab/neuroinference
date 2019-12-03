@@ -170,7 +170,9 @@ def plot_metric_summary(
     return fig, axes
 
 
-def plot_difference_distribution(baseline_group, fits_groups, metrics, fax=None):
+def plot_difference_distribution(
+    baseline_group, fits_groups, metrics, fax=None, alpha=0.5, color='gray'
+):
     """Assess the difference between two metrics for a baseline and a comparison
     set of fits.
 
@@ -222,14 +224,14 @@ def plot_difference_distribution(baseline_group, fits_groups, metrics, fax=None)
                 # plot direct comparison
                 axes[row_idx, col_idx].hist(
                     selection_ratio - baseline_selection_ratio,
-                    alpha=0.9,
-                    color='gray')
+                    alpha=alpha,
+                    color=color)
             else:
                 # plot some metric already stored in the H5 file
                 axes[row_idx, col_idx].hist(
                     (baseline_group[metric][:].mean(axis=0)
                      - algorithm[metric][:].mean(axis=0)),
-                    alpha=0.9,
-                    color='gray')
+                    alpha=alpha,
+                    color=color)
 
     return fig, axes
