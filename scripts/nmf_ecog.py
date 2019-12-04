@@ -54,7 +54,7 @@ def main(args):
                       ranks=np.arange(2, args.max_rank + 1),
                       nmf_init='random',
                       nmf_solver=args.solver,
-                      nmf_beta_loss='frobenius',
+                      nmf_beta_loss=args.beta_loss,
                       nmf_max_iter=1000)
         uoi.nmf.set_params(alpha=args.alpha, l1_ratio=args.l1_ratio)
         uoi.fit(Y)
@@ -85,6 +85,7 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', action='store_true')
     # nmf arguments
     parser.add_argument('--solver', default='cd')
+    parser.add_argument('--beta_loss', default='frobenius')
     parser.add_argument('--alpha', type=float, default=0.)
     parser.add_argument('--l1_ratio', type=float, default=0.)
     # uoi arguments
