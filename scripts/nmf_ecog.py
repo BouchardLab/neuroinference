@@ -60,7 +60,7 @@ def main(args):
         uoi.fit(Y)
         results = h5py.File(args.results_path, 'a')
         group = results.create_group(args.results_group)
-        group['components_'] = uoi.components_
+        group['components'] = uoi.components_
         group['dissimilarity'] = uoi.dissimilarity_
         group['bases_samples'] = uoi.bases_samples_
         group['bases_labels'] = uoi.bases_samples_labels_
