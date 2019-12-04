@@ -143,6 +143,7 @@ def main(args):
                                                           y_train_pred)
                 deviances_test[frame] = deviance_poisson(response_test,
                                                          y_test_pred)
+                model = 'poisson'
 
             # likelihoods
             lls_train[frame] = log_likelihood_glm(model=model,
