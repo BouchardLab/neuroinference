@@ -27,11 +27,13 @@ def main(args):
     stimulus_train = None
     response_train = None
     n_frames_per_window = None
+    using_gaussian_model = 'lasso' in args.method
 
     # root will gather the data and initialize storage arrays
     if rank == 0:
         if args.verbose:
             print('Getting data...')
+
         # gather data if we're in the central rank
         retina = Retina(data_path=args.data_path,
                         random_path=args.random_path)
@@ -39,10 +41,12 @@ def main(args):
         stimulus = retina.get_stims_for_recording(
             recording_idx=args.recording_idx,
             window_length=args.window_length)
+        # normalize response only if we are using gaussian model
         response = retina.get_responses_for_recording(
             recording_idx=args.recording_idx,
             window_length=args.window_length,
-            cells=args.cell)[:, 0]
+            cells=args.cell,
+            normalize=using_gaussian_model)[:, 0]
         n_frames_per_window = retina.get_n_frames_per_window(
             recording_idx=args.recording_idx,
             window_length=args.window_length)
@@ -56,7 +60,7 @@ def main(args):
         # create storage arrays
         strfs = np.zeros((n_frames_per_window, n_features))
         intercepts = np.zeros(n_frames_per_window)
-        if 'lasso' in args.method:
+        if using_gaussian_model:
             r2s_train = np.zeros(n_frames_per_window)
             r2s_test = np.zeros(n_frames_per_window)
         else:
@@ -133,7 +137,7 @@ def main(args):
             n_samples = y_train_pred.size
 
             # different scores needed for Lasso/Poisson
-            if 'lasso' in args.method:
+            if using_gaussian_model:
                 # coefficient of determination
                 r2s_train[frame] = r2_score(response_train, y_train_pred)
                 r2s_test[frame] = r2_score(response_test, y_test_pred)
@@ -177,7 +181,7 @@ def main(args):
         group['lls_test'] = lls_test
         group['aics'] = aics
         group['bics'] = bics
-        if 'lasso' in args.method:
+        if using_gaussian_model:
             group['r2s_train'] = r2s_train
             group['r2s_test'] = r2s_test
         else:
