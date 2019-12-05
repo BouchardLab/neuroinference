@@ -3,8 +3,10 @@ import networkx as nx
 import numpy as np
 
 from pyuoi.utils import log_likelihood_glm, AIC, BIC
-from .utils import deviance_poisson
+from scipy.stats import hypergeom
 from sklearn.metrics import r2_score
+
+from .utils import deviance_poisson
 
 
 def check_metrics(group, fold_idx, unit_idx, metrics, poisson=False):
@@ -96,6 +98,19 @@ def coupling_coefs_to_weight_matrix(coupling_coefs):
     return weight_matrix
 
 
+def create_directed_graph(coupling_coefs, weighted=False):
+    weight_matrix = coupling_coefs_to_weight_matrix(coupling_coefs)
+
+    if not weighted:
+        weight_matrix = (weight_matrix != 0).astype('int')
+
+    G = nx.convert_matrix.from_numpy_matrix(
+        weight_matrix,
+        create_using=nx.DiGraph()
+    )
+    return G
+
+
 def create_symmetrized_graph(coupling_coefs, omit_idxs=None, transform=None):
     """Converts a set of coupling coefficients to a symmetrized NetworkX graph.
 
@@ -142,3 +157,63 @@ def create_symmetrized_graph(coupling_coefs, omit_idxs=None, transform=None):
             weights_dict[unit_pair] = weight
 
     return G, weights_dict
+
+
+def coupling_coef_corrs(coupling_coefs1, coupling_coefs2):
+    """Calculate the correlation coefficients between all sets of coupling fits
+    for two different procedures.
+
+    Parameters
+    ----------
+    coupling_coefs1, coupling_coefs2 : np.ndarra
+        The coupling coefficients for which to evaluate correlations.
+
+    Returns
+    -------
+    correlations : np.ndarray
+        The correlations between each set of coupling fits.
+    """
+    n_neurons = coupling_coefs1.shape[0]
+    correlations = np.zeros(n_neurons)
+
+    for neuron in range(n_neurons):
+        if np.array_equal(coupling_coefs1[neuron], coupling_coefs2[neuron]):
+            correlations[neuron] = 1.
+        else:
+            correlations[neuron] = np.corrcoef(
+                coupling_coefs1[neuron],
+                coupling_coefs2[neuron]
+            )[0, 1]
+
+    return correlations
+
+
+def selection_profiles_by_chance(true, compare):
+    """Calculate the probability that the selection profile of dataset2 would
+    match up with the selection profile of dataset1 according to the
+    hypergeometric distribution.
+
+    Parameters
+    ----------
+    true, compare : np.ndarra
+        The coupling coefficients for which to evaluate the hypergeometric
+        test.
+
+    Returns
+    -------
+    probabilities : np.ndarray
+        The probability of matching selection profiles under the hypergeometric
+        distribution.
+    """
+    n_neurons, M = true.shape
+    probabilities = np.zeros(n_neurons)
+
+    for neuron in range(n_neurons):
+        n = np.count_nonzero(true[neuron])
+        N = np.count_nonzero(compare[neuron])
+        rv = hypergeom(M=M, n=n, N=N)
+
+        overlap = np.count_nonzero(true[neuron] * compare[neuron])
+        probabilities[neuron] = 1 - rv.cdf(x=overlap)
+
+    return probabilities
