@@ -34,13 +34,13 @@ def match_bases(components1, components2):
     for component in range(n_components):
         # determine the pair of components with the maximum overlap
         max_idx = np.unravel_index(np.argmax(overlaps), overlaps.shape)
-        max_ordering1[component] = int(max_idx[0])
-        max_ordering2[component] = int(max_idx[1])
+        max_ordering1[component] = max_idx[0]
+        max_ordering2[component] = max_idx[1]
         # toss out components so we don't select them in the future
         overlaps[max_idx[0], :] = -1
         overlaps[:, max_idx[1]] = -1
 
-    return max_ordering1, max_ordering2
+    return max_ordering1.astype('int'), max_ordering2.astype('int')
 
 
 def plot_ecog_bases(
