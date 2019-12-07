@@ -1,6 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import umap
 
 from pykalman import KalmanFilter
 from scipy.optimize import nnls
@@ -41,6 +42,50 @@ def match_bases(components1, components2):
         overlaps[:, max_idx[1]] = -1
 
     return max_ordering1.astype('int'), max_ordering2.astype('int')
+
+
+def plot_embedding(
+    samples, labels=None, colors=None, fax=None, n_neighbors=15, n_components=2,
+    metric='euclidean'
+):
+    # set up figure axes
+    if fax is None:
+        fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+    else:
+        fig, ax = fax
+
+    reducer = umap.UMAP(n_neighbors=n_neighbors,
+                        n_components=n_components,
+                        metric=metric)
+    embedding = reducer.fit_transform(samples)
+
+    if labels is not None:
+        unique = np.unique(labels)
+        n_unique = unique.size
+
+        if colors is None:
+            c_idxs = (255 * np.arange(n_unique) / n_unique).astype('int')
+            colors = plt.get_cmap('gist_rainbow')(c_idxs)
+
+        for idx, label in enumerate(unique):
+            sample_idxs = labels == label
+            if label == -1:
+                ax.scatter(embedding[sample_idxs, 0], embedding[sample_idxs, 1],
+                           marker='x',
+                           color='black',
+                           alpha=0.25)
+            else:
+                ax.scatter(embedding[sample_idxs, 0], embedding[sample_idxs, 1],
+                           marker='o',
+                           color=colors[idx],
+                           alpha=0.25)
+    else:
+        ax.scatter(embedding[:, 0], embedding[:, 1],
+                   color='k',
+                   edgecolor='white',
+                   alpha=0.5)
+
+    return fig, ax
 
 
 def plot_ecog_bases(
