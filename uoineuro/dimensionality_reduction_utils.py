@@ -4,7 +4,7 @@ import numpy as np
 import umap
 
 from pykalman import KalmanFilter
-from scipy.optimize import nnls
+from scipy.optimize import linear_sum_assignment, nnls
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.utils import check_random_state
@@ -24,15 +24,16 @@ def match_bases(components1, components2):
         The indices for each basis set that properly order the most similar
         pairs of bases.
     """
-    n_components, n_units = components1.shape
-    max_ordering1 = np.zeros(n_components)
-    max_ordering2 = np.zeros(n_components)
+    n_components1, n_units = components1.shape
+    n_components2 = components2.shape[0]
+    max_ordering1 = np.zeros(n_components1)
+    max_ordering2 = np.zeros(n_components2)
 
     # calculate overlap using dot products
     overlaps = np.dot(components1, components2.T)
 
     # iterate over components
-    for component in range(n_components):
+    for component in range(min(n_components1, n_components2)):
         # determine the pair of components with the maximum overlap
         max_idx = np.unravel_index(np.argmax(overlaps), overlaps.shape)
         max_ordering1[component] = max_idx[0]
@@ -41,13 +42,60 @@ def match_bases(components1, components2):
         overlaps[max_idx[0], :] = -1
         overlaps[:, max_idx[1]] = -1
 
+    # if number of components are different, handle the remaining components
+    if n_components1 < n_components2:
+        max_ordering2[component:] = np.setdiff1d(np.arange(n_components2),
+                                                 max_ordering2[:component])
+    elif n_components2 < n_components1:
+        max_ordering1[component:] = np.setdiff1d(np.arange(n_components1),
+                                                 max_ordering1[:component])
+
     return max_ordering1.astype('int'), max_ordering2.astype('int')
 
 
 def plot_embedding(
-    samples, labels=None, colors=None, fax=None, n_neighbors=15, n_components=2,
-    metric='euclidean'
+    samples, labels=None, colors=None, cmap='gist_rainbow', fax=None,
+    n_neighbors=15, n_components=2, metric='euclidean'
 ):
+    """Plots a set of components in an lower-dimensional embedded space using
+    UMAP.
+
+    Parameters
+    ----------
+    samples : np.ndarray, shape (n_samples, n_units)
+        The higher-dimensional set of components to plot in the low-dimensional
+        space.
+
+    labels : array-like, shape (n_samples,)
+        The labels for each sample. If provided, the plot will color-code the
+        lower-dimensional points.
+
+    colors : array-like, shape (n_unique_labels,)
+        If provided, color-code each unique label according to the entries
+        in this array-like.
+
+    cmap : string
+        If colors is not provided, unique labels are color-coded by finding
+        some spacing within this colormap.
+
+    fax : matplotlib (figure, ax)
+        The figure and axis to plot the bases on.
+
+    n_neighbors : int
+        UMAP parameter.
+
+    n_components : int
+        UMAP parameter.
+
+    metric : string
+        UMAP parameter.
+
+    Returns
+    -------
+    fig, axes : matplotlib objects
+        The plotted figure and axis.
+    """
+
     # set up figure axes
     if fax is None:
         fig, ax = plt.subplots(1, 1, figsize=(6, 6))
@@ -65,7 +113,7 @@ def plot_embedding(
 
         if colors is None:
             c_idxs = (255 * np.arange(n_unique) / n_unique).astype('int')
-            colors = plt.get_cmap('gist_rainbow')(c_idxs)
+            colors = plt.get_cmap(cmap)(c_idxs)
 
         for idx, label in enumerate(unique):
             sample_idxs = labels == label
@@ -307,6 +355,24 @@ def bi_cross_validator(
     # determine optimal rank
     k_max = ranks[np.argmin(errors)]
     return k_max, errors
+
+
+def dissimilarity_alt(H1, H2):
+    """Calculates an alternate dissimilarity between two sets of NMF bases.
+
+    Parameters
+    ----------
+    H1 : ndarray, shape (n_components, n_features)
+        First set of bases.
+
+    H2 : ndarray, shape (n_components, n_features)
+        Second set of bases.
+    """
+    H1 = H1 / np.linalg.norm(H1, axis=1, keepdims=True)
+    H2 = H2 / np.linalg.norm(H2, axis=1, keepdims=True)
+    C = - H1.dot(H2.T)
+    ri, ci = linear_sum_assignment(C)
+    return 1 + (C[ri, ci].sum() / H1.shape[0])
 
 
 def apply_linear_decoder(x, y, Y, train_frac=0.8):
