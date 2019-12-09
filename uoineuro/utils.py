@@ -24,7 +24,26 @@ def copy_group(send_file, send_group, rec_file, rec_group):
     rec.close()
 
 
+def cosine_similarity(v1, v2):
+    """Calculates the cosine similarity between two vectors."""
+    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
+
 def tighten_scatter_plot(ax, bounds, line_color='gray'):
+    """Takes an axis and makes the x and y limits equal, while plotting an
+    identity line.
+
+    Parameters
+    ----------
+    ax : matplotlib axis
+        The axis to tighten.
+
+    bounds : tuple or array-like
+        The bounds of the x and y axes.
+
+    line_color : string
+        The color of the identity line.
+    """
     ax.set_xlim(bounds)
     ax.set_ylim(bounds)
     ax.plot(bounds, bounds,

@@ -3,10 +3,10 @@ import networkx as nx
 import numpy as np
 
 from pyuoi.utils import log_likelihood_glm, AIC, BIC
-from scipy.stats import hypergeom
+from scipy.stats import hypergeom, spearmanr
 from sklearn.metrics import r2_score
 
-from .utils import deviance_poisson
+from .utils import cosine_similarity, deviance_poisson
 
 
 def check_metrics(group, fold_idx, unit_idx, metrics, poisson=False):
@@ -159,7 +159,7 @@ def create_symmetrized_graph(coupling_coefs, omit_idxs=None, transform=None):
     return G, weights_dict
 
 
-def coupling_coef_corrs(coupling_coefs1, coupling_coefs2):
+def coupling_coef_corrs(coupling_coefs1, coupling_coefs2, correlation='pearson'):
     """Calculate the correlation coefficients between all sets of coupling fits
     for two different procedures.
 
@@ -167,6 +167,9 @@ def coupling_coef_corrs(coupling_coefs1, coupling_coefs2):
     ----------
     coupling_coefs1, coupling_coefs2 : np.ndarra
         The coupling coefficients for which to evaluate correlations.
+
+    correlation : string
+        The type of correlation to calculate.
 
     Returns
     -------
@@ -177,13 +180,20 @@ def coupling_coef_corrs(coupling_coefs1, coupling_coefs2):
     correlations = np.zeros(n_neurons)
 
     for neuron in range(n_neurons):
-        if np.array_equal(coupling_coefs1[neuron], coupling_coefs2[neuron]):
+        ccs1 = coupling_coefs1[neuron]
+        ccs2 = coupling_coefs2[neuron]
+
+        if np.array_equal(ccs1, ccs2):
             correlations[neuron] = 1.
+        elif np.all(ccs1 == 0) or np.all(ccs2 == 0):
+            correlations[neuron] = 0
         else:
-            correlations[neuron] = np.corrcoef(
-                coupling_coefs1[neuron],
-                coupling_coefs2[neuron]
-            )[0, 1]
+            if correlation == 'pearson':
+                correlations[neuron] = np.corrcoef(ccs1, ccs2)[0, 1]
+            elif correlation == 'spearman':
+                correlations[neuron] = spearmanr(ccs1, ccs2).correlation
+            elif correlation == 'cosine':
+                correlations[neuron] = cosine_similarity(ccs1, ccs2)
 
     return correlations
 
