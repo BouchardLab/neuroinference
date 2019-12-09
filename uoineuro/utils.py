@@ -24,6 +24,17 @@ def copy_group(send_file, send_group, rec_file, rec_group):
     rec.close()
 
 
+def tighten_scatter_plot(ax, bounds, line_color='gray'):
+    ax.set_xlim(bounds)
+    ax.set_ylim(bounds)
+    ax.plot(bounds, bounds,
+            color=line_color,
+            linewidth=3,
+            zorder=-1)
+    ax.set_aspect('equal')
+    return ax
+
+
 def idx_to_xy(idx, dx, dy):
     """Converts an index to a set of xy coordinates in a grid with specified
     width and height.
