@@ -115,6 +115,7 @@ def main(args):
             stability_selection=args.stability_selection,
             selection_frac=args.selection_frac,
             estimation_frac=args.estimation_frac,
+            estimation_score=args.estimation_score,
             max_iter=10000,
             random_state=random_state)
         uoi.fit(X_new[train_idx, :], y[train_idx])
@@ -162,6 +163,7 @@ if __name__ == '__main__':
     parser.add_argument('--stability_selection', type=float, default=1.)
     parser.add_argument('--selection_frac', type=float, default=0.8)
     parser.add_argument('--estimation_frac', type=float, default=0.8)
+    parser.add_argument('--estimation_score', default='acc')
 
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
