@@ -46,15 +46,10 @@ def main(args):
     n_parameters = n_outputs * n_features
 
     # storage arrays
-    logistic_coefs = np.zeros((n_folds, n_outputs, n_features))
-    logistic_intercepts = np.zeros((n_folds, n_outputs))
-    logistic_scores = np.zeros(n_folds)
-    logistic_srs = np.zeros(n_folds)
-
-    uoi_coefs = np.zeros((n_folds, n_outputs, n_features))
-    uoi_intercepts = np.zeros((n_folds, n_outputs))
-    uoi_scores = np.zeros(n_folds)
-    uoi_srs = np.zeros(n_folds)
+    coefs = np.zeros((n_folds, n_outputs, n_features))
+    intercepts = np.zeros((n_folds, n_outputs))
+    scores = np.zeros(n_folds)
+    selection_ratios = np.zeros(n_folds)
 
     train_folds = []
     test_folds = []
@@ -76,63 +71,49 @@ def main(args):
         X_test_center = X_test - X_train.mean(axis=0, keepdims=True)
 
         # fit logistic regression
-        logistic = LogisticRegressionCV(
-            Cs=args.n_Cs,
-            cv=args.cv,
-            solver='saga',
-            penalty='l1',
-            multi_class='multinomial',
-            max_iter=1000,
-            fit_intercept=True)
-        logistic.fit(X_train_center, y_train)
-        # store results
-        logistic_coefs[fold_idx] = logistic.coef_
-        logistic_intercepts[fold_idx] = logistic.intercept_
-        logistic_srs[fold_idx] = np.count_nonzero(logistic.coef_) / n_parameters
-        logistic_scores[fold_idx] = logistic.score(X_test_center, y_test)
+        if args.method == 'logistic':
+            fitter = LogisticRegressionCV(
+                Cs=args.n_Cs,
+                cv=args.cv,
+                solver='saga',
+                penalty='l1',
+                multi_class='multinomial',
+                max_iter=1000,
+                fit_intercept=True)
+        elif args.method == 'uoi':
+            fitter = UoI_L1Logistic(
+                n_boots_sel=args.n_boots_sel,
+                n_boots_est=args.n_boots_est,
+                fit_intercept=True,
+                standardize=False,
+                selection_frac=args.selection_frac,
+                estimation_frac=args.estimation_frac,
+                n_C=args.n_Cs,
+                multi_class='multinomial',
+                estimation_score=args.estimation_score,
+                shared_support=args.shared_support,
+                random_state=random_state)
 
-        # fit uoi logistic
-        uoi = UoI_L1Logistic(
-            n_boots_sel=30,
-            n_boots_est=30,
-            fit_intercept=True,
-            standardize=False,
-            selection_frac=0.8,
-            estimation_frac=0.8,
-            n_C=args.n_Cs,
-            multi_class='multinomial',
-            estimation_score=args.estimation_score,
-            estimation_target=args.estimation_target,
-            shared_support=args.shared_support,
-            random_state=random_state)
-        uoi.fit(X_train_center, y_train)
         # store results
-        uoi_coefs[fold_idx] = uoi.coef_
-        uoi_intercepts[fold_idx] = uoi.intercept_
-        uoi_srs[fold_idx] = np.count_nonzero(uoi.coef_) / n_parameters
-        uoi_scores[fold_idx] = uoi.score(X_test_center, y_test)
+        fitter.fit(X_train_center, y_train)
+        # store results
+        coefs[fold_idx] = fitter.coef_
+        intercepts[fold_idx] = fitter.intercept_
+        selection_ratios[fold_idx] = np.count_nonzero(fitter.coef_) / n_parameters
+        scores[fold_idx] = fitter.score(X_test_center, y_test)
 
     # collect results
     results = h5py.File(results_path, 'a')
-    base = results.require_group(results_group)
-
-    logistic_group = base.require_group('logistic')
-    logistic_group['coefs'] = logistic_coefs
-    logistic_group['intercepts'] = logistic_intercepts
-    logistic_group['scores'] = logistic_scores
-    logistic_group['srs'] = logistic_srs
-
-    uoi_group = base.require_group('uoi')
-    uoi_group['coefs'] = uoi_coefs
-    uoi_group['intercepts'] = uoi_intercepts
-    uoi_group['scores'] = uoi_scores
-    uoi_group['srs'] = uoi_srs
-
-    folds = base.require_group('folds')
+    group = results.require_group(results_group)
+    group['coefs'] = coefs
+    group['intercepts'] = intercepts
+    group['scores'] = scores
+    group['selection_ratios'] = selection_ratios
+    # store folds
+    folds = group.require_group('folds')
     for idx, (train_fold, test_fold) in enumerate(zip(train_folds, test_folds)):
         folds['train/%s' % idx] = train_fold
         folds['test/%s' % idx] = test_fold
-
     results.close()
 
 
@@ -143,16 +124,20 @@ if __name__ == '__main__':
     parser.add_argument('--data_path')
     parser.add_argument('--results_path')
     parser.add_argument('--results_group')
+    parser.add_argument('--method')
     parser.add_argument('--task', default='c')
     parser.add_argument('--n_folds', type=int, default=5)
     parser.add_argument('--random_state', type=int, default=-1)
-
-    # fitter arguments
+    # logistic arguments
     parser.add_argument('--n_Cs', type=int, default=50)
     parser.add_argument('--cv', type=int, default=5)
-    parser.add_argument('--shared_support', action='store_true')
+    # uoi arguments
+    parser.add_argument('--n_boots_sel', type=int, default=30)
+    parser.add_argument('--n_boots_est', type=int, default=30)
+    parser.add_argument('--selection_frac', type=float, default=0.8)
+    parser.add_argument('--estimation_frac', type=float, default=0.8)
+    parser.add_argument('--stability_selection', type=float, default=0.95)
     parser.add_argument('--estimation_score', default='acc')
-    parser.add_argument('--estimation_target', default='test')
 
     args = parser.parse_args()
 

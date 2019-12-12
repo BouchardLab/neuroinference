@@ -35,10 +35,10 @@ def main(args):
     results['data/Y'] = Y
     uoi = results.create_group('uoi')
     css = results.create_group('css')
-
     # create storage for results
     uoi['reconstructions'] = np.zeros((reps, n_max_ks))
     css['reconstructions'] = np.zeros((reps, n_max_ks))
+    results.close()
 
     # iterate over repetitions
     for rep in range(reps):
@@ -60,10 +60,6 @@ def main(args):
             css_fit.fit(Y, c=max_k + 10)
             css_columns = np.sort(css_fit.column_indices_[:n_columns])
 
-            # store column indices
-            uoi['columns/' + str(rep) + '/' + str(max_k)] = uoi_columns
-            css['columns/' + str(rep) + '/' + str(max_k)] = css_columns
-
             # extract selected columns
             Y_uoi = Y[:, uoi_columns]
             Y_css = Y[:, css_columns]
@@ -71,12 +67,18 @@ def main(args):
             # calculate reconstruction errors
             uoi_reconstruction = Y - np.dot(Y_uoi, np.dot(np.linalg.pinv(Y_uoi), Y))
             css_reconstruction = Y - np.dot(Y_css, np.dot(np.linalg.pinv(Y_css), Y))
+
+            # store column indices
+            results = h5py.File(args.results_path, 'a')
+            uoi = results['uoi']
+            css = results['css']
+            uoi['columns/' + str(rep) + '/' + str(max_k)] = uoi_columns
+            css['columns/' + str(rep) + '/' + str(max_k)] = css_columns
             uoi['reconstructions'][rep, k_idx] = \
                 np.sum(np.abs(uoi_reconstruction)) / Y.size
             css['reconstructions'][rep, k_idx] = \
                 np.sum(np.abs(css_reconstruction)) / Y.size
-
-    results.close()
+            results.close()
 
 
 if __name__ == '__main__':
