@@ -132,6 +132,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_Cs', type=int, default=50)
     parser.add_argument('--cv', type=int, default=5)
     # uoi arguments
+    parser.add_argument('--shared_support', action='store_true')
     parser.add_argument('--n_boots_sel', type=int, default=30)
     parser.add_argument('--n_boots_est', type=int, default=30)
     parser.add_argument('--selection_frac', type=float, default=0.8)
