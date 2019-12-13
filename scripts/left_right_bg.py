@@ -44,12 +44,9 @@ def main(args):
     n_valid_trials = valid_trials.size
 
     # storage arrays
-    baseline_scores = np.zeros(n_folds)
-    baseline_intercepts = np.zeros(n_folds)
-    baseline_coefs = np.zeros((n_folds, n_good_units))
-    uoi_scores = np.zeros(n_folds)
-    uoi_intercepts = np.zeros(n_folds)
-    uoi_coefs = np.zeros((n_folds, n_good_units))
+    scores = np.zeros(n_folds)
+    intercepts = np.zeros(n_folds)
+    coefs = np.zeros((n_folds, n_good_units))
 
     ###################
     # Preprocess data #
@@ -88,62 +85,48 @@ def main(args):
     skf.get_n_splits(X_new, y)
 
     # iterate over folds
-    for fold, (train_idx, test_idx) in enumerate(skf.split(X_new, y)):
+    for fold_idx, (train_idx, test_idx) in enumerate(skf.split(X_new, y)):
         if verbose:
-            print('Fold %s' % fold)
+            print('Fold %s' % fold_idx)
+        # fit logistic regression
+        if args.method == 'logistic':
+            fitter = LogisticRegressionCV(
+                Cs=args.n_Cs,
+                cv=args.cv,
+                solver='saga',
+                penalty='l1',
+                max_iter=10000,
+                fit_intercept=True)
+        elif args.method == 'uoi':
+            fitter = UoI_L1Logistic(
+                n_boots_sel=args.n_boots_sel,
+                n_boots_est=args.n_boots_est,
+                fit_intercept=True,
+                standardize=False,
+                selection_frac=args.selection_frac,
+                estimation_frac=args.estimation_frac,
+                n_C=args.n_Cs,
+                estimation_score=args.estimation_score,
+                stability_selection=args.stability_selection,
+                max_iter=10000,
+                random_state=random_state)
 
-        # run vanilla logistic regression
-        logistic = LogisticRegressionCV(
-            Cs=args.n_Cs,
-            fit_intercept=True,
-            cv=args.cv,
-            penalty='l1',
-            solver='saga',
-            max_iter=10000)
-        logistic.fit(X_new[train_idx, :], y[train_idx])
-        baseline_coefs[fold] = logistic.coef_
-        baseline_intercepts[fold] = logistic.intercept_
-        baseline_scores[fold] = logistic.score(X_new[test_idx, :],
-                                               y[test_idx])
-
-        # run UoI logistic regression
-        uoi = UoI_L1Logistic(
-            n_C=args.n_Cs,
-            standardize=False,
-            n_boots_sel=args.n_boots_sel,
-            n_boots_est=args.n_boots_est,
-            stability_selection=args.stability_selection,
-            selection_frac=args.selection_frac,
-            estimation_frac=args.estimation_frac,
-            estimation_score=args.estimation_score,
-            max_iter=10000,
-            random_state=random_state)
-        uoi.fit(X_new[train_idx, :], y[train_idx])
-        uoi_coefs[fold] = uoi.coef_
-        uoi_intercepts[fold] = uoi.intercept_
-        uoi_scores[fold] = uoi.score(X_new[test_idx, :],
-                                     y[test_idx])
+        fitter.fit(X_new[train_idx, :], y[train_idx])
+        coefs[fold_idx] = fitter.coef_
+        intercepts[fold_idx] = fitter.intercept_
+        scores[fold_idx] = fitter.score(X_new[test_idx, :], y[test_idx])
 
     # store results in h5 file
     results = h5py.File(results_path, 'a')
-    base = results.require_group(results_group)
-
-    baseline_group = base.require_group('baseline')
-    baseline_group['coefs'] = baseline_coefs
-    baseline_group['intercepts'] = baseline_intercepts
-    baseline_group['scores'] = baseline_scores
-
-    uoi_group = base.require_group('uoi')
-    uoi_group['coefs'] = uoi_coefs
-    uoi_group['intercepts'] = uoi_intercepts
-    uoi_group['scores'] = uoi_scores
-
+    group = results.require_group(results_group)
+    group['coefs'] = coefs
+    group['intercepts'] = intercepts
+    group['scores'] = scores
     results.close()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-
     # required arguments
     parser.add_argument('--data_path')
     parser.add_argument('--results_path')
@@ -153,18 +136,16 @@ if __name__ == '__main__':
     parser.add_argument('--n_folds', type=int, default=5)
     parser.add_argument('--random_state', type=int, default=-1)
     parser.add_argument('--with_std', action='store_true')
-
-    # fitter arguments
+    # logist arguments
     parser.add_argument('--n_Cs', type=int, default=100)
     parser.add_argument('--cv', type=int, default=5)
-    # UoI arguments
+    # uoi arguments
     parser.add_argument('--n_boots_sel', type=int, default=30)
     parser.add_argument('--n_boots_est', type=int, default=30)
-    parser.add_argument('--stability_selection', type=float, default=1.)
     parser.add_argument('--selection_frac', type=float, default=0.8)
     parser.add_argument('--estimation_frac', type=float, default=0.8)
     parser.add_argument('--estimation_score', default='acc')
-
+    parser.add_argument('--stability_selection', type=float, default=1.)
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 
