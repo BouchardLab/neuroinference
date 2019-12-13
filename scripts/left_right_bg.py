@@ -131,6 +131,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_path')
     parser.add_argument('--results_path')
     parser.add_argument('--results_group')
+    parser.add_argument('--method')
     parser.add_argument('--window_left', type=float, default=0.1)
     parser.add_argument('--window_right', type=float, default=0.)
     parser.add_argument('--n_folds', type=int, default=5)
