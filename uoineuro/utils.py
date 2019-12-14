@@ -29,7 +29,7 @@ def cosine_similarity(v1, v2):
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
 
-def tighten_scatter_plot(ax, bounds, line_color='gray'):
+def tighten_scatter_plot(ax, bounds, line_kwargs=None):
     """Takes an axis and makes the x and y limits equal, while plotting an
     identity line.
 
@@ -46,10 +46,12 @@ def tighten_scatter_plot(ax, bounds, line_color='gray'):
     """
     ax.set_xlim(bounds)
     ax.set_ylim(bounds)
-    ax.plot(bounds, bounds,
-            color=line_color,
-            linewidth=3,
-            zorder=-1)
+    if line_kwargs is not None:
+        ax.plot(bounds, bounds,
+                color=line_kwargs.get('color', 'gray'),
+                linewidth=line_kwargs.get('linewidth', 3),
+                linestyle=line_kwargs.get('linestyle', '-'),
+                zorder=line_kwargs.get('zorder', -1))
     ax.set_aspect('equal')
     return ax
 
