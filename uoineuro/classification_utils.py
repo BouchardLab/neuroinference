@@ -5,7 +5,8 @@ from .utils import idx_to_xy
 
 
 def plot_basal_ganglia_coefs(
-    baseline_coefs, uoi_coefs, vmin=-1.75, vmax=1.75, row_columns=(3, 6), fax=None
+    baseline_coefs, uoi_coefs, vmin=-1.75, vmax=1.75, row_columns=(3, 6),
+    scattersize=225, fax=None
 ):
     """Plot the basal ganglia coefficients in a grid.
 
@@ -39,7 +40,7 @@ def plot_basal_ganglia_coefs(
     for idx, coef in enumerate(baseline_coefs):
         if coef == 0:
             x, y = idx_to_xy(idx, row_columns[1], row_columns[0])
-            axes[0].scatter(x, y, marker='x', color='k', s=225)
+            axes[0].scatter(x, y, marker='x', color='k', s=scattersize)
 
     uoi_img = axes[1].imshow(
         np.flip(uoi_coefs.reshape(row_columns), axis=0),
@@ -49,7 +50,7 @@ def plot_basal_ganglia_coefs(
     for idx, coef in enumerate(uoi_coefs):
         if coef == 0:
             x, y = idx_to_xy(idx, row_columns[1], row_columns[0])
-            axes[1].scatter(x, y, marker='x', color='k', s=225)
+            axes[1].scatter(x, y, marker='x', color='k', s=scattersize)
 
     for ax in axes:
         ax.set_xticks([])
