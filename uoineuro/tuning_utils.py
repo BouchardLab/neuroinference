@@ -50,3 +50,38 @@ def calculate_best_frequencies_ecog(
             pref_frequencies[electrode] = pref_frequency
 
     return pref_frequencies
+
+
+def create_strf_design(stim, resp, n_frames):
+    """Create the design and response matrices for STRF data, given a certain
+    number of frames.
+
+    Parameters
+    ----------
+    stim : np.ndarray
+        The stimulus matrix.
+
+    resp : np.ndarray
+        The response matrix.
+
+    n_frames : int
+        The number of frames in the STRF.
+
+    Returns
+    -------
+    X : np.ndarray
+        New design matrix.
+
+    Y : np.ndarray
+        New response matrix.
+    """
+    n_samples, n_features = stim.shape
+    n_samples_adj = n_samples - n_frames + 1
+
+    X = np.zeros((n_samples_adj, n_features * n_frames))
+    Y = resp[:, (n_frames - 1):]
+
+    for sample in range(n_samples_adj):
+        X[sample] = np.flip(stim[sample:sample + n_frames], axis=0).ravel()
+
+    return X, Y
