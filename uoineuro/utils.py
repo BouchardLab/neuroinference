@@ -267,3 +267,20 @@ def plot_difference_distribution(
                     color=color)
 
     return fig, axes
+
+
+def append_cb_ax(fig, ax, width=0.015, x_adj=0, y_adj=0):
+    """Appends a colorbar axis to a panel of subplots."""
+    fig_invert = fig.transFigure.inverted()
+    ax_bottom_right_x, ax_bottom_right_y = \
+        fig_invert.transform(ax.transAxes.transform([1.0, 0.]))
+    ax_top_right_x, ax_top_right_y = \
+        fig_invert.transform(ax.transAxes.transform([1.0, 1.0]))
+
+    cax = fig.add_axes([
+        ax_bottom_right_x + x_adj,
+        ax_bottom_right_y + y_adj,
+        width,
+        ax_top_right_y - ax_bottom_right_y])
+
+    return cax
