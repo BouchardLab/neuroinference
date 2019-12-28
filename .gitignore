@@ -4,6 +4,7 @@
 
 ### Other files ###
 *.pdf
+*.png
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
