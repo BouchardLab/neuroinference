@@ -2,6 +2,7 @@ import itertools
 import networkx as nx
 import numpy as np
 
+from networkx.algorithms import community
 from pyuoi.utils import log_likelihood_glm, AIC, BIC
 from scipy.stats import hypergeom, spearmanr
 from sklearn.metrics import r2_score
@@ -227,3 +228,23 @@ def selection_profiles_by_chance(true, compare):
         probabilities[neuron] = 1 - rv.cdf(x=overlap)
 
     return probabilities
+
+
+def compute_modularity(G):
+    if isinstance(G, nx.DiGraph):
+        G = G.to_undirected(reciprocal=True)
+    
+    community_detection = community.greedy_modularity_communities(G)
+    modularity = community.modularity(G, community_detection)
+    return modularity
+
+
+def compute_controllability_curve(G, times=None, metric='mineig'):
+    traces = np.zeros(Ts.shape)
+    for idx, T in enumerate(Ts):
+        C = np.zeros((A.shape[0], A.shape[0] * T))
+        for ii in range(T):
+            C[:, A.shape[0]*ii:A.shape[0]*(ii + 1)] = np.linalg.matrix_power(A, ii)
+        W = np.dot(C, C.T)
+        traces[idx] = np.min(np.linalg.eigh(W)[0])
+    return G
