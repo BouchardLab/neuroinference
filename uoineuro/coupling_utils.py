@@ -233,18 +233,32 @@ def selection_profiles_by_chance(true, compare):
 def compute_modularity(G):
     if isinstance(G, nx.DiGraph):
         G = G.to_undirected(reciprocal=True)
-    
+
     community_detection = community.greedy_modularity_communities(G)
     modularity = community.modularity(G, community_detection)
     return modularity
 
 
-def compute_controllability_curve(G, times=None, metric='mineig'):
-    traces = np.zeros(Ts.shape)
-    for idx, T in enumerate(Ts):
-        C = np.zeros((A.shape[0], A.shape[0] * T))
-        for ii in range(T):
-            C[:, A.shape[0]*ii:A.shape[0]*(ii + 1)] = np.linalg.matrix_power(A, ii)
+def compute_controllability_curves(G, times=None, B=None):
+    if times is None:
+        times = np.arange(10, 500, 20)
+
+    n_times = times.size
+    metrics = np.zeros((n_times, 4))
+    A = nx.adjacency_matrix(G).todense()
+    n_units = A.shape[0]
+    if B is None:
+        B = np.identity(n_units)
+
+    for idx, t in enumerate(times):
+        C = np.zeros((n_units, n_units * t))
+        for ii in range(t):
+            Apower = np.linalg.matrix_power(A, ii)
+            C[:, n_units*ii:n_units*(ii + 1)] = np.dot(Apower, B)
         W = np.dot(C, C.T)
-        traces[idx] = np.min(np.linalg.eigh(W)[0])
-    return G
+        metrics[idx, 0] = np.min(np.linalg.eigh(W)[0])
+        metrics[idx, 1] = np.trace(W)
+        metrics[idx, 2] = np.trace(np.linalg.inv(W))
+        metrics[idx, 3] = np.linalg.det(W)
+
+    return metrics
