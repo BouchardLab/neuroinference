@@ -231,34 +231,116 @@ def selection_profiles_by_chance(true, compare):
 
 
 def compute_modularity(G):
+    """Calculate the modularity of a graph.
+
+    Parameters
+    ----------
+    G : NetworkX graph
+        The graph.
+
+    Returns
+    -------
+    modularity : float
+        The modularity of the graph.
+    """
+    # convert to undirected graph if necessary
     if isinstance(G, nx.DiGraph):
         G = G.to_undirected(reciprocal=True)
 
+    # extract communities
     community_detection = community.greedy_modularity_communities(G)
+    # calculate modularity with those communities
     modularity = community.modularity(G, community_detection)
     return modularity
 
 
-def compute_controllability_curves(G, times=None, B=None):
-    if times is None:
-        times = np.arange(10, 500, 20)
+def compute_small_worldness(G, metric, niter=100, nrand=5, seed=None):
+    """Calculates the small worldness of a graph.
 
-    n_times = times.size
-    metrics = np.zeros((n_times, 4))
+    Parameters
+    ----------
+    G : NetworkX graph
+        The graph.
+
+    metric : string
+        Small worldness metric. Either 'omega' or 'sigma'.
+
+    niter : int
+        The number of rewiring iterations.
+
+    nrand : int
+        Number of random graphs to compute.
+
+    seed : int
+        The seed.
+
+    Returns
+    -------
+    small_worldness : float
+        The calculated small-worldness.
+    """
+    G = max(nx.connected_component_subgraphs(G), key=len)
+
+    if metric == 'omega':
+        small_worldness = nx.algorithms.smallworld.omega(G,
+                                                         niter=niter,
+                                                         nrand=nrand,
+                                                         seed=seed)
+    elif metric == 'sigma':
+        small_worldness = nx.algorithms.smallworld.sigma(G,
+                                                         niter=niter,
+                                                         nrand=nrand,
+                                                         seed=seed)
+    else:
+        raise ValueError('Small world metric not available.')
+    return small_worldness
+
+
+def compute_average_controllability(G, times=None, B=None):
+    """Compute the average controllability over a set of timepoints, using
+    the trace of the controllability Grammian.
+
+    Parameters
+    ----------
+    G : NetworkX graph
+        The graph.
+
+    times : np.ndarray
+        The timepoints on which to compute the controllability.
+
+    B : np.ndarray
+        The control matrix.
+
+    Returns
+    -------
+    controllability : np.ndarray
+        The average controllability at different timepoints.
+    """
+    # extract adjacency matrix
     A = nx.adjacency_matrix(G).todense()
     n_units = A.shape[0]
+
+    # if no control matrix is provided, assume we can control all nodes
     if B is None:
         B = np.identity(n_units)
 
+    # if no times are provided, use default
+    if times is None:
+        times = np.arange(10, 500, 20)
+    n_times = times.size
+
+    # controllability storage matrix
+    controllability = np.zeros(n_times)
+
+    # iterate over timepoints
     for idx, t in enumerate(times):
         C = np.zeros((n_units, n_units * t))
+        # fill up controllability matrix
         for ii in range(t):
             Apower = np.linalg.matrix_power(A, ii)
             C[:, n_units*ii:n_units*(ii + 1)] = np.dot(Apower, B)
+        # controllability grammian
         W = np.dot(C, C.T)
-        metrics[idx, 0] = np.min(np.linalg.eigh(W)[0])
-        metrics[idx, 1] = np.trace(W)
-        metrics[idx, 2] = np.trace(np.linalg.inv(W))
-        metrics[idx, 3] = np.linalg.det(W)
-
-    return metrics
+        # utilize trace to measure average control energy
+        controllability[idx] = np.trace(W)
+    return controllability
