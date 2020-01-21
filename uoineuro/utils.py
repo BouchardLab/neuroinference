@@ -2,6 +2,8 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
+from sklearn.linear_model import LinearRegression
+
 
 def copy_group(send_file, send_group, rec_file, rec_group):
     send = h5py.File(send_file, 'r')
@@ -284,3 +286,20 @@ def append_cb_ax(fig, ax, width=0.015, x_adj=0, y_adj=0):
         ax_top_right_y - ax_bottom_right_y])
 
     return cax
+
+
+def obtain_tuning_preferences(neuropack, name):
+    if name == 'pvc11':
+        X = neuropack.get_design_matrix(form='cosine2')
+        Y = neuropack.get_response_matrix(transform='square_root')
+        # perform fit
+        ols = LinearRegression()
+        ols.fit(X, Y)
+        _, preferences = neuropack.get_tuning_modulation_and_preference(
+            form='cosine2',
+            tuning_coefs=ols.coef_
+        )
+    else:
+        raise ValueError('Incorrect name.')
+    return preferences
+
