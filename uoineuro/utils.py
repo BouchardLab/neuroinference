@@ -302,4 +302,3 @@ def obtain_tuning_preferences(neuropack, name):
     else:
         raise ValueError('Incorrect name.')
     return preferences
-
