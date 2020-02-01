@@ -4,6 +4,23 @@ import numpy as np
 from .utils import idx_to_xy
 
 
+def plot_border(x, y, which, ax, linewidth=2):
+    if which == 'left':
+        xs = (x - 0.5) * np.ones(1000)
+        ys = np.linspace(y - 0.5, y + 0.5, 1000)
+    elif which == 'right':
+        xs = (x + 0.5) * np.ones(1000)
+        ys = np.linspace(y - 0.5, y + 0.5, 1000)
+    elif which == 'top':
+        xs = np.linspace(x - 0.5, x + 0.5, 1000)
+        ys = (y + 0.5) * np.ones(1000)
+    elif which == 'bottom':
+        xs = np.linspace(x - 0.5, x + 0.5, 1000)
+        ys = (y - 0.5) * np.ones(1000)
+    ax.plot(xs, ys, color='k', linewidth=linewidth)
+    return ax
+
+
 def plot_basal_ganglia_coefs(
     baseline_coefs, uoi_coefs, vmin=-1.75, vmax=1.75, row_columns=(3, 6),
     scattersize=225, fax=None
