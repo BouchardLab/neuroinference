@@ -1,3 +1,4 @@
+import h5py
 import itertools
 import networkx as nx
 import numpy as np
@@ -8,6 +9,20 @@ from scipy.stats import hypergeom, spearmanr
 from sklearn.metrics import r2_score
 
 from .utils import cosine_similarity, deviance_poisson
+
+
+def read_coupling_coefs(paths):
+    results = [h5py.File(path, 'r') for path in paths]
+    linear_ccs = [np.median(result['lasso/coupling_coefs'], axis=0)
+                  for result in results]
+    uoi_linear_ccs = [np.median(result['uoi_lasso_bic/coupling_coefs'], axis=0)
+                      for result in results]
+    poisson_ccs = [np.median(result['glmnet_poisson/coupling_coefs'], axis=0)
+                   for result in results]
+    uoi_poisson_ccs = [np.median(result['uoi_poisson_bic/coupling_coefs'], axis=0)
+                       for result in results]
+    [result.close() for result in results]
+    return linear_ccs, uoi_linear_ccs, poisson_ccs, uoi_poisson_ccs
 
 
 def check_metrics(group, fold_idx, unit_idx, metrics, poisson=False):
