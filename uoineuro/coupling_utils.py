@@ -11,18 +11,48 @@ from sklearn.metrics import r2_score
 from .utils import cosine_similarity, deviance_poisson
 
 
-def read_coupling_coefs(paths):
+def read_coupling_coefs(paths, linear=True, poisson=True):
+    """Read in coupling coefficients from a list of paths.
+
+    Parameters
+    ----------
+    paths : list of strings
+        The list of paths containing h5 files with the coefficients.
+
+    linear : bool
+        If True, return linear model coefficients.
+
+    poisson : bool
+        If True, return poisson model coefficients.
+
+    Returns
+    -------
+    ccs : tuple of np.ndarrays
+        The coupling coefficients.
+    """
     results = [h5py.File(path, 'r') for path in paths]
-    linear_ccs = [np.median(result['lasso/coupling_coefs'], axis=0)
-                  for result in results]
-    uoi_linear_ccs = [np.median(result['uoi_lasso_bic/coupling_coefs'], axis=0)
-                      for result in results]
-    poisson_ccs = [np.median(result['glmnet_poisson/coupling_coefs'], axis=0)
-                   for result in results]
-    uoi_poisson_ccs = [np.median(result['uoi_poisson_bic/coupling_coefs'], axis=0)
-                       for result in results]
+    # read in coefficients for linear coupling models
+    if linear:
+        baseline_linear_ccs = [np.median(result['lasso/coupling_coefs'], axis=0)
+                               for result in results]
+        uoi_linear_ccs = [np.median(result['uoi_lasso_bic/coupling_coefs'], axis=0)
+                          for result in results]
+        linear_ccs = (baseline_linear_ccs, uoi_linear_ccs)
+    else:
+        linear_ccs = ()
+    # read in coefficients for poisson coupling models
+    if poisson:
+        baseline_poisson_ccs = [np.median(result['glmnet_poisson/coupling_coefs'], axis=0)
+                                for result in results]
+        uoi_poisson_ccs = [np.median(result['uoi_poisson_bic/coupling_coefs'], axis=0)
+                           for result in results]
+        poisson_ccs = (baseline_poisson_ccs, uoi_poisson_ccs)
+    else:
+        poisson_ccs = ()
+    # close results files
     [result.close() for result in results]
-    return linear_ccs, uoi_linear_ccs, poisson_ccs, uoi_poisson_ccs
+
+    return linear_ccs + poisson_ccs
 
 
 def check_metrics(group, fold_idx, unit_idx, metrics, poisson=False):
