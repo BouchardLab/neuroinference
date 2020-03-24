@@ -2,7 +2,7 @@ import numpy as np
 
 
 def calculate_best_frequencies_ecog(
-    tuning_coefs, ecog, return_grid=False, omit_idxs=None
+    tuning_coefs, ecog, return_grid=False, omit_idxs=None, n_frequencies=100000
 ):
     """Calculates the best frequencies for a set of tuning coefficients.
 
@@ -36,11 +36,16 @@ def calculate_best_frequencies_ecog(
         if electrode in omit_idxs:
             continue
 
-        frequencies = np.linspace(ecog.freq_set[0], ecog.freq_set[-1], 100000)
+        frequencies = np.linspace(ecog.freq_set[0], ecog.freq_set[-1], n_frequencies)
         _, tc = ecog.get_tuning_curve(tuning_coefs=tuning_coefs[electrode],
                                       frequencies=frequencies)
+
+        # check if preferred frequency is empty
+        if not np.any(tc):
+            pref_frequency = 0
         # obtain preferred frequency using maximum of tuning curve
-        pref_frequency = frequencies[np.argmax(tc)]
+        else:
+            pref_frequency = frequencies[np.argmax(tc)]
 
         # place preferred frequency in storage depending on desired shape
         if return_grid:
