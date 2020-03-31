@@ -11,7 +11,7 @@ from sklearn.metrics import r2_score
 from .utils import cosine_similarity, deviance_poisson
 
 
-def read_coupling_coefs(paths, linear=True, poisson=True):
+def read_coupling_coefs(paths, linear=True, poisson=True, normalize=False):
     """Read in coupling coefficients from a list of paths.
 
     Parameters
@@ -53,6 +53,30 @@ def read_coupling_coefs(paths, linear=True, poisson=True):
     [result.close() for result in results]
 
     return linear_ccs + poisson_ccs
+
+
+def normalize_coupling_coefs(first, second):
+    """Normalizes coupling coefficients to the maximum among the two sets of
+    coefficients.
+
+    Parameters
+    ----------
+    first, second : np.ndarray
+        The sets of coupling coefficients. Assume first dimension refers to the
+        models.
+
+    Returns
+    -------
+    first, second : np.ndarray
+        The coefficients, normalized to the maximum values.
+    """
+    max_coefs = np.max(
+        [np.max(np.abs(first), axis=1), np.max(np.abs(second), axis=1)],
+        axis=0
+    )[..., np.newaxis]
+    max_coefs[max_coefs == 0] = 1
+
+    return first / max_coefs, second / max_coefs
 
 
 def check_metrics(group, fold_idx, unit_idx, metrics, poisson=False):
