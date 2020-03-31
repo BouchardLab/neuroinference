@@ -31,6 +31,23 @@ def cosine_similarity(v1, v2):
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
 
+def cohens_d(first, second):
+    # sample sizes
+    n1 = first.size
+    n2 = second.size
+    # means
+    mu1 = np.mean(first)
+    mu2 = np.mean(second)
+    # standard deviations
+    s1 = np.std(first)
+    s2 = np.std(second)
+    # pool standard deviations
+    s = np.sqrt(((n1 - 1) * s1**2 + (n2 - 1) * s2**2) / (n1 + n2 - 2))
+    # cohen's d
+    d = (mu1 - mu2) / s
+    return d
+
+
 def tighten_scatter_plot(ax, bounds, line_kwargs=None):
     """Takes an axis and makes the x and y limits equal, while plotting an
     identity line.
