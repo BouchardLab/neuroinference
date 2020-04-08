@@ -1,3 +1,6 @@
+# ai files
+*.ai
+
 # graph files
 *.gexf
 *.graphml
