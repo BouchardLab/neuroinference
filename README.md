@@ -1,1 +1,1 @@
-Union of Intersections for Sparse and Predictive Modeling of Neuroscience Data
+Accurate inference in parametric models reshapes neuroscientific interpretation and improves data-driven discovery
