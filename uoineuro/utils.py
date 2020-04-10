@@ -1,11 +1,26 @@
+"""General utility functions for the class."""
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sklearn.linear_model import LinearRegression
-
 
 def copy_group(send_file, send_group, rec_file, rec_group):
+    """Copies one group in an h5py file, and pastes it in another file.
+
+    Parameters
+    ----------
+    send_file : string
+        The filepath containing the data to copy.
+
+    send_group : string
+        The path in the h5 file to copy.
+
+    rec_file : string
+        The filepath containing the h5 file to receive the data.
+
+    rec_group : string
+        The path in the h5 file to paste the data.
+    """
     send = h5py.File(send_file, 'r')
     to_send = send[send_group]
     rec = h5py.File(rec_file, 'a')
@@ -32,6 +47,7 @@ def cosine_similarity(v1, v2):
 
 
 def cohens_d(first, second):
+    """Calculates Cohen's d between two samples."""
     # sample sizes
     n1 = first.size
     n2 = second.size
@@ -289,7 +305,27 @@ def plot_difference_distribution(
 
 
 def append_cb_ax(fig, ax, width=0.015, x_adj=0, y_adj=0):
-    """Appends a colorbar axis to a panel of subplots."""
+    """Appends a colorbar axis to a panel of subplots.
+
+    Parameters
+    ----------
+    fig, ax : matplotlib objects
+        Figure and axes for a matplotlib figure.
+
+    width : float
+        The width of the figure.
+
+    x_adj : float
+        The amount to horizontally displace the colorbar.
+
+    y_adj : float
+        The amount to vertically displace the colorbar.
+
+    Returns
+    -------
+    cax : colorbar axes
+        The colorbar axes.
+    """
     fig_invert = fig.transFigure.inverted()
     ax_bottom_right_x, ax_bottom_right_y = \
         fig_invert.transform(ax.transAxes.transform([1.0, 0.]))
@@ -303,19 +339,3 @@ def append_cb_ax(fig, ax, width=0.015, x_adj=0, y_adj=0):
         ax_top_right_y - ax_bottom_right_y])
 
     return cax
-
-
-def obtain_tuning_preferences(neuropack, name):
-    if name == 'pvc11':
-        X = neuropack.get_design_matrix(form='cosine2')
-        Y = neuropack.get_response_matrix(transform='square_root')
-        # perform fit
-        ols = LinearRegression()
-        ols.fit(X, Y)
-        _, preferences = neuropack.get_tuning_modulation_and_preference(
-            form='cosine2',
-            tuning_coefs=ols.coef_
-        )
-    else:
-        raise ValueError('Incorrect name.')
-    return preferences
