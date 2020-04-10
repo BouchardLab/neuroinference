@@ -1,3 +1,4 @@
+"""Utility functions corresponding to encoding models."""
 import numpy as np
 
 

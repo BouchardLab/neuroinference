@@ -1,3 +1,4 @@
+"""Utility functions corresponding to coupling models."""
 import h5py
 import itertools
 import networkx as nx
@@ -107,12 +108,15 @@ def check_metrics(group, fold_idx, unit_idx, metrics, poisson=False):
     intercept = group['intercepts'][fold_idx, unit_idx]
     coupling_coef = group['coupling_coefs'][fold_idx, unit_idx, :]
 
+    # iterate over metrics
     for metric in metrics:
+        # look at metrics requiring training scores
         if ('train' in metric) or ('aic' in metric) or ('bic' in metric):
             sample_idx = group['train_folds/fold_' + str(fold_idx)][:]
         else:
             sample_idx = group['test_folds/fold_' + str(fold_idx)]
 
+        # calculate estimated data
         y_true = y[sample_idx]
         X_sub = X[sample_idx]
         if poisson:
@@ -124,24 +128,30 @@ def check_metrics(group, fold_idx, unit_idx, metrics, poisson=False):
 
         est = group[metric][fold_idx, unit_idx]
 
+        # get true values
         if metric == 'r2s_train' or metric == 'r2s_test':
             true = r2_score(y_true, y_pred)
+
         elif metric == 'lls_train' or metric == 'lls_test':
             true = log_likelihood_glm(model=model, y_true=y_true, y_pred=y_pred)
             true *= y_true.size
+
         elif metric == 'aics':
             ll = log_likelihood_glm(model=model, y_true=y_true, y_pred=y_pred)
             ll *= y_true.size
             n_features = 1 + np.count_nonzero(coupling_coef)
             true = AIC(ll, n_features)
+
         elif metric == 'bics':
             ll = log_likelihood_glm(model=model, y_true=y_true, y_pred=y_pred)
             ll *= y_true.size
             n_features = 1 + np.count_nonzero(coupling_coef)
             true = BIC(ll, n_features, sample_idx.size)
+
         elif metric == 'deviances_train' or metric == 'deviances_test':
             true = deviance_poisson(y_true, y_pred)
 
+        # final assertion
         assert true == est
     return True
 
@@ -169,6 +179,21 @@ def coupling_coefs_to_weight_matrix(coupling_coefs):
 
 
 def create_directed_graph(coupling_coefs, weighted=False):
+    """Creates directed graph from coupling coefficients.
+
+    Parameters
+    ----------
+    coupling_coefs : np.ndarray
+        The coupling coefficients.
+
+    weighted : bool
+        If True, the graph is weighted by the coupling coefficient edge.
+
+    Returns
+    -------
+    G : nx.Graph
+        The networkX directed graph.
+    """
     weight_matrix = coupling_coefs_to_weight_matrix(coupling_coefs)
 
     if not weighted:
