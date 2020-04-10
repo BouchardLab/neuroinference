@@ -15,7 +15,7 @@ from pyuoi.utils import log_likelihood_glm, AIC, BIC
 from sklearn.linear_model import LassoCV
 from sklearn.metrics import r2_score
 from sklearn.model_selection import StratifiedKFold
-from uoineuro.utils import deviance_poisson
+from neuroinference.utils import deviance_poisson
 
 
 def main(args):

@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='uoineuro',
+    name='neuroinference',
     description='',
     long_description=long_description,
     author='Pratik Sachdeva',
@@ -18,6 +18,7 @@ setup(
     install_requires=[
       'h5py',
       'numpy',
-      'scipy'
+      'scipy',
+      'pyuoi'
     ]
 )
