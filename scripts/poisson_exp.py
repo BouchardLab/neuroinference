@@ -20,20 +20,20 @@ def main(args):
     n_nz_features = args.n_nz_features
     n_samples = args.n_samples
     # Random number generation
-    rng = np.random.default_rng(args.rng)
+    model_rng = np.random.default_rng(args.model_rng)
     data_rng = np.random.default_rng(args.data_rng)
     # Instantiate parameters and selection profile
     beta = np.zeros(n_features)
     beta[:n_nz_features] = 1
-    rng.shuffle(beta)
+    model_rng.shuffle(beta)
     support = beta != 0
     # Instantiate non-zero parameter values
     nz_beta = truncexpon.rvs(
         b=args.high,
         scale=args.scale,
         size=n_nz_features,
-        random_state=rng)
-    signs = rng.choice([-1, 1], size=n_nz_features)
+        random_state=model_rng)
+    signs = model_rng.choice([-1, 1], size=n_nz_features)
     # Shift the samples and apply the sign mask
     floor = 0.001
     beta[support] = signs * (floor + (args.high - nz_beta))
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--high', type=int, default=1)
     parser.add_argument('--scale', type=int, default=1)
     # Random number generator arguments
-    parser.add_argument('--rng', type=int, default=2332)
+    parser.add_argument('--model_rng', type=int, default=2332)
     parser.add_argument('--data_rng', type=int, default=48119)
     # UoI objects
     parser.add_argument('--standardize', action='store_true')
