@@ -45,6 +45,7 @@ def main(args):
             f"--n_samples={args.n_samples} "
             f"--high={args.high} "
             f"--scale={args.scale} "
+            f"--intercept={args.intercept} "
             f"--model_rng={model_rng} "
             f"--data_rng={data_rngs[idx]} "
             f"--n_lambdas={args.n_lambdas} "
@@ -79,6 +80,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_features', type=int, default=300)
     parser.add_argument('--n_nz_features', type=int, default=100)
     parser.add_argument('--n_samples', type=int, default=1200)
+    parser.add_argument('--intercept', type=float, default=1)
     parser.add_argument('--high', type=int, default=1)
     parser.add_argument('--scale', type=int, default=1)
     # UoI objects

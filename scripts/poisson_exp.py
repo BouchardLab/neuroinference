@@ -37,7 +37,7 @@ def main(args):
     # Shift the samples and apply the sign mask
     floor = 0.001
     beta[support] = signs * (floor + (args.high - nz_beta))
-    intercept = 1
+    intercept = args.intercept
     # Generate data
     X = data_rng.uniform(low=0, high=1, size=(n_samples, n_features))
     mu = np.exp(intercept + X @ beta)
@@ -77,6 +77,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_samples', type=int, default=1200)
     parser.add_argument('--high', type=int, default=1)
     parser.add_argument('--scale', type=int, default=1)
+    parser.add_argument('--intercept', type=float, default=1)
     # Random number generator arguments
     parser.add_argument('--model_rng', type=int, default=2332)
     parser.add_argument('--data_rng', type=int, default=48119)
