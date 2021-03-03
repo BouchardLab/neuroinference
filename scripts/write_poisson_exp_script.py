@@ -39,7 +39,7 @@ def main(args):
         batch_script += f"echo 'Job {idx+1}/{n_datasets}'\n"
         batch_script += (
             f"srun -n {n_tasks} -c 1 shifter python -u {script_path} "
-            f"--save_path={save_tag}_idx.h5 "
+            f"--save_path={save_tag}_{idx}.h5 "
             f"--n_features={args.n_features} "
             f"--n_nz_features={args.n_nz_features} "
             f"--n_samples={args.n_samples} "
