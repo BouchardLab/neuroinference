@@ -339,3 +339,25 @@ def append_cb_ax(fig, ax, width=0.015, x_adj=0, y_adj=0):
         ax_top_right_y - ax_bottom_right_y])
 
     return cax
+
+
+def selection_accuracy(true, est):
+    """Calculate the selection accuracy from an estimated profile, given
+    the true selection profile.
+
+    Parameters
+    ----------
+    true, est : np.ndarray
+        The true and fitted parameters.
+
+    Returns
+    -------
+    selection_accuracy : int
+        The selection accuracy.
+    """
+    true = true.astype(bool)
+    est = est.astype(bool)
+    S_true = np.count_nonzero(true)
+    S_est = np.count_nonzero(est)
+    S_diff = np.count_nonzero(np.logical_xor(true, est))
+    return 1 - (S_diff / (S_true + S_est))
