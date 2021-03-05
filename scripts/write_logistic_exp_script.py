@@ -83,7 +83,7 @@ if __name__ == '__main__':
     parser.add_argument('--scale', type=int, default=1)
     # UoI objects
     parser.add_argument('--standardize', action='store_true')
-    parser.add_argument('--n_lambdas', type=int, default=50)
+    parser.add_argument('--n_Cs', type=int, default=50)
     parser.add_argument('--n_boots_sel', type=int, default=30)
     parser.add_argument('--n_boots_est', type=int, default=30)
     parser.add_argument('--selection_frac', type=float, default=0.8)
