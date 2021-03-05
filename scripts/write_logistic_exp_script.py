@@ -47,7 +47,7 @@ def main(args):
             f"--scale={args.scale} "
             f"--model_rng={model_rng} "
             f"--data_rng={data_rngs[idx]} "
-            f"--n_lambdas={args.n_Cs} "
+            f"--n_Cs={args.n_Cs} "
             f"--n_boots_sel={args.n_boots_sel} "
             f"--n_boots_est={args.n_boots_est} "
             f"--selection_frac={args.selection_frac} "
