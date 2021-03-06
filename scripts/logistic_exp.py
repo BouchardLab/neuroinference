@@ -1,19 +1,21 @@
 """
 Performs an experiment testing UoI Logistic on synthetic data.
 """
+import warnings
 import argparse
 import h5py
 import numpy as np
-import warnings
+import time
 
 from mpi4py import MPI
-from pyuoi.linear_model import UoI_L1Logistic
+with warnings.catch_warnings() as w:
+    warnings.simplefilter("ignore", category=FutureWarning)
+    from pyuoi.linear_model import UoI_L1Logistic
 from scipy.stats import truncexpon
 from sklearn.linear_model import LogisticRegressionCV
 
 
 def main(args):
-    warnings.filterwarnings("ignore", category=FutureWarning)
 
     # MPI communicator
     comm = MPI.COMM_WORLD
@@ -47,6 +49,9 @@ def main(args):
     prob = 1. / (1 + np.exp(-(intercept + X @ beta)))
     y = (data_rng.uniform(low=0, high=1, size=n_samples) < prob).astype('int')
 
+    if rank == 0:
+        t0 = time.time()
+
     fitter = UoI_L1Logistic(
         n_boots_sel=args.n_boots_sel,
         n_boots_est=args.n_boots_est,
@@ -60,16 +65,16 @@ def main(args):
         max_iter=args.max_iter,
         comm=comm).fit(X, y)
 
-    base = LogisticRegressionCV(
-        Cs=args.n_Cs,
-        fit_intercept=False,
-        cv=5,
-        penalty='l1',
-        solver='saga',
-        tol=1e-4,
-        max_iter=args.max_iter).fit(X, y)
-
     if rank == 0:
+        base = LogisticRegressionCV(
+            Cs=args.n_Cs,
+            fit_intercept=False,
+            cv=5,
+            penalty='l1',
+            solver='saga',
+            tol=1e-4,
+            max_iter=args.max_iter).fit(X, y)
+
         with h5py.File(args.save_path, 'w') as results:
             results['beta'] = beta
             results['intercept'] = np.array([intercept])
@@ -79,6 +84,8 @@ def main(args):
             results['intercept_base'] = np.array([base.intercept_])
             results['X'] = X
             results['y'] = y
+
+        print(f"Job complete in {time.time() - t0} seconds.")
 
 
 if __name__ == '__main__':
